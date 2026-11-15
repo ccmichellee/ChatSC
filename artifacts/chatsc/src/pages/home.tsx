@@ -73,8 +73,8 @@ export default function Home() {
             <p className="font-mono text-[10px] uppercase tracking-[.2em] text-accent">How it works</p>
             <h2 className="mt-4 max-w-3xl break-words font-display text-2xl font-extrabold leading-tight sm:text-4xl" data-testid="heading-text-recommendations">Personalized recommendations, by text.</h2>
             <p className="mt-4 max-w-2xl text-sm leading-6 text-background/75">Less searching. More opportunities that fit. Here’s how ChatSC turns scattered campus information into your next step.</p>
-            <Link href={profile?.onboarded ? "/demo" : "/onboarding"} className="mt-7 inline-flex items-center gap-2 rounded-full bg-accent px-5 py-3 text-sm font-bold text-accent-foreground transition-transform hover:-translate-y-0.5">
-              {profile?.onboarded ? "Preview a sample text" : "Start Onboarding"} <ArrowRight size={16} />
+            <Link href="/onboarding" className="mt-7 inline-flex items-center gap-2 rounded-full bg-accent px-5 py-3 text-sm font-bold text-accent-foreground transition-transform hover:-translate-y-0.5">
+              {profile?.onboarded ? "Update my preferences" : "Start Onboarding"} <ArrowRight size={16} />
             </Link>
           </div>
           <ol className="grid min-w-0 gap-6 p-6 md:grid-cols-3 sm:p-9" aria-label="Steps to get personalized recommendations">
