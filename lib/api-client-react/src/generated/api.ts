@@ -812,6 +812,80 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       return useMutation(getSaveOnboardingMutationOptions(options), queryClient);
     }
 
+export const getResetPersonalizationUrl = () => {
+
+
+
+
+  return `/api/session/reset`
+}
+
+/**
+ * @summary Clear this browser's session without deleting student profiles
+ */
+export const resetPersonalization = async ( options?: Parameters<typeof customFetch>[1]): Promise<StudentProfile> => {
+
+  return customFetch<StudentProfile>(getResetPersonalizationUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getResetPersonalizationMutationKey = () => ['resetPersonalization'] as const;
+
+export const getResetPersonalizationMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof resetPersonalization>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof resetPersonalization>>, TError,void, TContext> => {
+
+const mutationKey = getResetPersonalizationMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof resetPersonalization>>, void> = () => {
+
+
+          return  resetPersonalization(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ResetPersonalizationMutationResult = NonNullable<Awaited<ReturnType<typeof resetPersonalization>>>
+
+    export type ResetPersonalizationMutationError = ErrorType<void>
+
+
+    /**
+ * @summary Clear this browser's session without deleting student profiles
+ */
+export const useResetPersonalization = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof resetPersonalization>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof resetPersonalization>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getResetPersonalizationMutationOptions(options), queryClient);
+    }
+
 export const getGetProfileUrl = () => {
 
 

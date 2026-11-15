@@ -1,5 +1,8 @@
 import type { ReactNode } from "react";
 import { Link, useLocation } from "wouter";
+import { useQueryClient } from "@tanstack/react-query";
+import { useResetPersonalization } from "@workspace/api-client-react";
+import { useToast } from "@/hooks/use-toast";
 import { AccessibilityWidget } from "@/components/accessibility-widget";
 
 const links = [
@@ -13,6 +16,21 @@ const links = [
 
 export function Shell({ children }: { children: ReactNode }) {
   const [loc] = useLocation();
+  const queryClient = useQueryClient();
+  const reset = useResetPersonalization();
+  const { toast } = useToast();
+  const resetView = () => reset.mutate(undefined, {
+    onSuccess: async () => {
+      await queryClient.cancelQueries();
+      queryClient.clear();
+      window.location.assign(import.meta.env.BASE_URL);
+    },
+    onError: () => toast({
+      title: "Couldn't reset personalization",
+      description: "Nothing was changed in your view. Please try again.",
+      variant: "destructive",
+    }),
+  });
   return (
     <div className="min-h-[100dvh] flex flex-col">
       <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[60] bg-accent text-accent-foreground px-4 py-2 rounded-full font-semibold">Skip to content</a>
@@ -38,7 +56,13 @@ export function Shell({ children }: { children: ReactNode }) {
       <footer className="border-t border-border mt-16">
         <div className="max-w-6xl mx-auto px-4 py-8 text-sm text-muted-foreground flex flex-col md:flex-row gap-2 justify-between">
           <p><span className="font-display font-bold text-[#990000]">Chat<span className="text-[#FFCC00]">SC</span></span> is an independent student guide, not an official USC service.</p>
-          <p className="flex gap-4"><Link href="/privacy" className="underline" data-testid="link-privacy">Privacy (draft)</Link><Link href="/terms" className="underline" data-testid="link-terms">Terms (draft)</Link></p>
+          <div className="flex flex-wrap items-start gap-x-4 gap-y-2">
+            <Link href="/privacy" className="underline" data-testid="link-privacy">Privacy (draft)</Link>
+            <Link href="/terms" className="underline" data-testid="link-terms">Terms (draft)</Link>
+            <button type="button" onClick={resetView} disabled={reset.isPending} data-testid="button-reset-personalization" title="Clear this browser's personalization without deleting saved profiles" className="min-h-8 text-left underline underline-offset-2 hover:text-primary disabled:cursor-wait disabled:opacity-60">
+              {reset.isPending ? "Resetting…" : "Reset personalization"}
+            </button>
+          </div>
           <p className="font-mono text-xs">All times shown in Los Angeles time. Items marked Sample are fictional.</p>
         </div>
       </footer>

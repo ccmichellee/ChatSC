@@ -211,6 +211,36 @@ export const SaveOnboardingResponse = zod.object({
 })
 
 
+/**
+ * @summary Clear this browser's session without deleting student profiles
+ */
+export const resetPersonalizationResponseAvailabilityItemDayMin = 0;
+export const resetPersonalizationResponseAvailabilityItemDayMax = 6;
+
+
+
+export const ResetPersonalizationResponse = zod.object({
+  "user": zod.string(),
+  "onboarded": zod.boolean(),
+  "consent": zod.boolean(),
+  "interests": zod.array(zod.string()),
+  "goals": zod.array(zod.string()),
+  "notes": zod.string(),
+  "availability": zod.array(zod.object({
+  "day": zod.number().int().min(resetPersonalizationResponseAvailabilityItemDayMin).max(resetPersonalizationResponseAvailabilityItemDayMax).describe('0=Monday, 6=Sunday'),
+  "start": zod.string(),
+  "end": zod.string(),
+  "title": zod.string()
+})),
+  "frequency": zod.string(),
+  "name": zod.string(),
+  "email": zod.string(),
+  "email_verified": zod.boolean(),
+  "phone_verified": zod.boolean(),
+  "gmail_consent": zod.boolean()
+})
+
+
 export const getProfileResponseAvailabilityItemDayMin = 0;
 export const getProfileResponseAvailabilityItemDayMax = 6;
 

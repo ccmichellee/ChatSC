@@ -131,6 +131,22 @@ def profile(request: Request):
     return profile_for(session_user(request))
 
 
+@app.post("/api/session/reset")
+def reset_personalization(request: Request, response: Response):
+    if request.headers.get("sec-fetch-site") == "cross-site":
+        raise HTTPException(403, "Open ChatSC to reset your personalization.")
+    token = request.cookies.get("chatsc_session", "")
+    if token:
+        with store.get_connection() as conn:
+            conn.execute("DELETE FROM web_sessions WHERE token=?", (token,))
+    response.delete_cookie(
+        "chatsc_session", path="/", httponly=True, samesite="strict",
+        secure=request.headers.get("x-forwarded-proto") == "https",
+    )
+    response.headers["Cache-Control"] = "no-store"
+    return profile_for(None)
+
+
 @app.post("/api/onboarding")
 def onboarding(data: StudentInput, request: Request, response: Response):
     user = session_user(request)

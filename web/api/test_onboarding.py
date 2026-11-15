@@ -44,6 +44,44 @@ class OnboardingTests(unittest.TestCase):
         values.update(updates)
         return main.StudentInput(**values)
 
+    def test_reset_only_clears_current_session_and_retains_profiles(self):
+        first_response, second_response = Response(), Response()
+        main.onboarding(self.payload(), request_with_cookie(), first_response)
+        main.onboarding(self.payload(name="Another student"), request_with_cookie(), second_response)
+        first_cookie = first_response.headers["set-cookie"].split(";", 1)[0]
+        second_cookie = second_response.headers["set-cookie"].split(";", 1)[0]
+        first_user = main.session_user(request_with_cookie(first_cookie))
+        second_user = main.session_user(request_with_cookie(second_cookie))
+        response = Response()
+
+        result = main.reset_personalization(request_with_cookie(first_cookie), response)
+
+        self.assertFalse(result["onboarded"])
+        self.assertEqual(result["user"], "")
+        self.assertEqual(result["interests"], [])
+        self.assertEqual(result["availability"], [])
+        self.assertIsNone(main.session_user(request_with_cookie(first_cookie)))
+        self.assertEqual(main.session_user(request_with_cookie(second_cookie)), second_user)
+        self.assertIsNotNone(self.store.get_student_profile(first_user))
+        self.assertIsNotNone(self.store.get_student_profile(second_user))
+        self.assertIn("Max-Age=0", response.headers["set-cookie"])
+        self.assertIn("Path=/", response.headers["set-cookie"])
+        self.assertEqual(response.headers["cache-control"], "no-store")
+
+    def test_reset_without_a_session_is_safe_to_repeat(self):
+        for _ in range(2):
+            response = Response()
+            result = main.reset_personalization(request_with_cookie(), response)
+            self.assertFalse(result["onboarded"])
+            self.assertIn("Max-Age=0", response.headers["set-cookie"])
+
+    def test_reset_rejects_cross_site_requests(self):
+        request = request_with_cookie()
+        request.scope["headers"].append((b"sec-fetch-site", b"cross-site"))
+        with self.assertRaises(HTTPException) as error:
+            main.reset_personalization(request, Response())
+        self.assertEqual(error.exception.status_code, 403)
+
     def test_profile_persists_preferences_but_never_claims_verification(self):
         response = Response()
         main.onboarding(self.payload(), request_with_cookie(), response)

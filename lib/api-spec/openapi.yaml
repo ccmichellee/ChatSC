@@ -107,6 +107,18 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/StudentProfile" }
+  /session/reset:
+    post:
+      operationId: resetPersonalization
+      summary: Clear this browser's session without deleting student profiles
+      responses:
+        "200":
+          description: Session cleared and anonymous profile returned
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StudentProfile" }
+        "403":
+          description: Cross-site reset request rejected
   /profile:
     get:
       operationId: getProfile
