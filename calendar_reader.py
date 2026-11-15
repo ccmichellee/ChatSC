@@ -103,21 +103,30 @@ class MacCalendarReader:
     Cross-references scheduled commitments against campus events to detect availability.
     """
 
-    def __init__(self, skip_calendars: Optional[List[str]] = None, mock: bool = False):
+    def __init__(self, skip_calendars: Optional[List[str]] = None, mock: bool = False, cache_ttl_seconds: int = 180):
         self.skip_calendars = skip_calendars or DEFAULT_SKIP_CALENDARS
         self.mock = mock
+        self.cache_ttl_seconds = cache_ttl_seconds
         self._cached_events: Optional[List[Dict[str, Any]]] = None
+        self._cache_time: Optional[datetime.datetime] = None
 
     def get_upcoming_events(self, days_ahead: int = 21, use_cache: bool = True) -> List[Dict[str, Any]]:
         """
         Retrieves scheduled events from macOS Calendar.app for the next `days_ahead` days.
         Returns a list of dicts: {calendar, summary, start_iso, end_iso, start_dt, end_dt}.
         """
-        if use_cache and self._cached_events is not None:
+        now = datetime.datetime.now()
+        if (
+            use_cache
+            and self._cached_events is not None
+            and self._cache_time is not None
+            and (now - self._cache_time).total_seconds() < self.cache_ttl_seconds
+        ):
             return self._cached_events
 
         if self.mock:
             self._cached_events = self._get_mock_events()
+            self._cache_time = now
             return self._cached_events
 
         script = f'''
@@ -185,15 +194,18 @@ end tell
 
             logger.info(f"📅 Retrieved {len(events)} event(s) from student's macOS Calendar.app.")
             self._cached_events = events
+            self._cache_time = now
             return events
 
         except subprocess.TimeoutExpired:
             logger.warning("Calendar AppleScript query timed out. Using fallback schedule.")
             self._cached_events = self._get_mock_events()
+            self._cache_time = now
             return self._cached_events
         except Exception as e:
             logger.warning(f"Failed to query Calendar.app: {e}. Using fallback schedule.")
             self._cached_events = self._get_mock_events()
+            self._cache_time = now
             return self._cached_events
 
     def _get_mock_events(self) -> List[Dict[str, Any]]:
