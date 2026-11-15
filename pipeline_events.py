@@ -8,6 +8,7 @@ from student_memory import MemoryStore
 from crawl_usc_events import crawl_events
 from llm_client import LlamaClient
 from imessage_sender import send_message
+from calendar_reader import MacCalendarReader
 
 logging.basicConfig(
     level=logging.INFO,
@@ -37,6 +38,7 @@ def generate_proactive_outreach(
         f"  Location: {e['location']}\n"
         f"  Free Food: {'Yes' if e['has_free_food'] else 'No'}\n"
         f"  Match Signals: {', '.join(e.get('matched_reasons', []))}\n"
+        f"  Schedule Availability: {e.get('schedule_note', 'Clear on calendar')}\n"
         f"  Description: {e['description'][:220]}"
         for e in events
     ])
@@ -51,13 +53,14 @@ def generate_proactive_outreach(
         f"• Enrolled Courses: {student_profile.get('courses', [])}\n"
         f"• Active Clubs: {student_profile.get('clubs', [])}\n"
         f"• Core Interests: {student_profile.get('interests', [])}\n\n"
-        f"Events Discovered:\n"
+        f"Events Discovered (with Student Schedule Status):\n"
         f"{events_text}\n\n"
         f"Instructions for iMessage:\n"
         f"1. Write a natural, conversational heads-up text (2-3 sentences max) to {student_profile.get('name', 'friend')}.\n"
-        f"2. If multiple events are provided, touch on both (e.g. highlight the tech/career angle of one, and the food/community vibe of the other).\n"
-        f"3. Keep it brief, spontaneous, and Trojan-spirited (e.g., 'Fight On! ✌️').\n"
-        f"4. Do NOT use bullet points, markdown headers, or robotic formal greetings."
+        f"2. If multiple events are provided, touch on both.\n"
+        f"3. Calendar Awareness: If an event has a schedule conflict (marked with 'Direct calendar conflict' or 'Overlaps with'), gently acknowledge it in a spontaneous student way (e.g., 'Heads up: I saw you have [Conflict], but in case your schedule opens up, [Event] is happening...'). If free, feel free to mention their calendar looks clear!\n"
+        f"4. Keep it brief, spontaneous, and Trojan-spirited (e.g., 'Fight On! ✌️').\n"
+        f"5. Do NOT use bullet points, markdown headers, or robotic formal greetings."
     )
 
     # Use direct completion without tools for proactive notification synthesis
@@ -69,7 +72,8 @@ def generate_proactive_outreach(
         ev_lines = []
         for ev in events:
             food_txt = " (free food!)" if ev.get("has_free_food") else ""
-            ev_lines.append(f"{ev['title']} ({ev['date']} @ {ev['location']}{food_txt})")
+            conflict_txt = f" [heads up: might overlap with {ev['conflicting_event']}]" if ev.get("has_schedule_conflict") else ""
+            ev_lines.append(f"{ev['title']} ({ev['date']} @ {ev['location']}{food_txt}{conflict_txt})")
         reply = (
             f"Hey {student_profile.get('name', 'Trojan')}! Quick heads up on a couple campus events: "
             f"{' and '.join(ev_lines)}. Fight On! ✌️"
@@ -88,14 +92,17 @@ def run_pipeline(
     dry_run: bool = False,
     api_key: Optional[str] = None,
     model: Optional[str] = None,
-    bot_prefix: str = "🤖 "
+    bot_prefix: str = "🤖 ",
+    use_calendar: bool = True,
+    mock_calendar: bool = False
 ) -> Dict[str, Any]:
     """
     Executes the full pipeline:
     1. Crawls USC calendar events into memory.db.
     2. Identifies unnotified events matching registered student profiles.
-    3. Wakes up the agent to generate proactive recommendations.
-    4. Delivers via iMessage and logs recommendations to prevent duplicates.
+    3. Checks student's macOS Calendar for conflicts.
+    4. Wakes up the agent to generate proactive recommendations with schedule awareness.
+    5. Delivers via iMessage and logs recommendations to prevent duplicates.
     """
     store = MemoryStore()
 
@@ -112,6 +119,14 @@ def run_pipeline(
     if not llama.is_configured():
         logger.warning("⚠️ Meta API key not set. LLAMA_API_KEY is required for proactive agent wake-up.")
         return {"status": "error", "error": "LLAMA_API_KEY not configured"}
+
+    # Initialize macOS Calendar reader if enabled
+    cal_reader = None
+    student_cal_events: List[Dict[str, Any]] = []
+    if use_calendar:
+        logger.info("📅 Initializing macOS Calendar availability checker...")
+        cal_reader = MacCalendarReader(mock=mock_calendar)
+        student_cal_events = cal_reader.get_upcoming_events(days_ahead=30)
 
     # Step 3: Determine target students (with alias normalization)
     if target_user:
@@ -162,10 +177,24 @@ def run_pipeline(
 
         logger.info(f"   Found {len(unnotified)} matching event(s) for {student_name}:")
         for ev in unnotified:
-            logger.info(f"   • [{ev['id']}] {ev['title']} (Score: {ev['match_score']})")
+            # Step 4.5: Check calendar availability & conflicts
+            if cal_reader:
+                sched_eval = cal_reader.evaluate_conflict(ev["date"], student_cal_events)
+                ev["schedule_status"] = sched_eval["status"]
+                ev["has_schedule_conflict"] = sched_eval["has_conflict"]
+                ev["conflicting_event"] = sched_eval.get("conflicting_event")
+                ev["schedule_note"] = sched_eval.get("conflicting_details") or sched_eval.get("note")
+
+                status_emoji = "⚠️ Conflict" if ev["has_schedule_conflict"] else "✅ Free"
+                logger.info(f"   • [{ev['id']}] {ev['title']} (Score: {ev['match_score']}, {status_emoji}: {ev['schedule_note']})")
+            else:
+                ev["schedule_status"] = "free"
+                ev["has_schedule_conflict"] = False
+                ev["schedule_note"] = "Schedule checking disabled."
+                logger.info(f"   • [{ev['id']}] {ev['title']} (Score: {ev['match_score']})")
 
         # Step 5: Wake up agent to synthesize proactive iMessage
-        logger.info(f"⚡ Step 3: Waking up Tommy ({llama.model}) to compose proactive text...")
+        logger.info(f"⚡ Step 3: Waking up Tommy ({llama.model}) to compose proactive text with schedule awareness...")
         recommendation_pitch = generate_proactive_outreach(llama, profile, unnotified, user_id)
 
         full_message = f"{bot_prefix}{recommendation_pitch}".strip()
@@ -210,6 +239,8 @@ def main():
     parser.add_argument("--api-key", type=str, default="", help="Meta API key override.")
     parser.add_argument("--model", type=str, default="", help="LLM model ID override (defaults to muse-ember-1.0).")
     parser.add_argument("--bot-prefix", type=str, default="🤖 ", help="Prefix added to proactive bot messages.")
+    parser.add_argument("--no-calendar", action="store_true", help="Disable checking student macOS Calendar.app availability.")
+    parser.add_argument("--mock-calendar", action="store_true", help="Use mock student calendar schedule instead of live macOS Calendar.app.")
 
     args = parser.parse_args()
 
@@ -223,7 +254,9 @@ def main():
         dry_run=args.dry_run,
         api_key=args.api_key or None,
         model=args.model or None,
-        bot_prefix=args.bot_prefix
+        bot_prefix=args.bot_prefix,
+        use_calendar=not args.no_calendar,
+        mock_calendar=args.mock_calendar
     )
 
 

@@ -114,17 +114,25 @@
   - Multi-Source Aggregation: Unified with official USC Calendar API in `crawl_usc_events.py`.
   - Ingestion Result: 131 EngageSC club events + 267 USC Calendar events = 398 total campus events indexed into `memory.db`.
 
-## Decision 12: Instagram Club Events Ingestion via Meta Business Discovery API
+## Decision 12: Instagram Club Events Ingestion (Status: Deprecated / Dropped)
 
 - **Date**: 2026-11-15
-- **Decision**: Ingest campus club events from Instagram via Meta Graph API (Business Discovery) and Muse Ember LLM extraction.
-- **Approved by User**: Selected "(Recommended) Official Meta Graph API (Business Discovery)".
+- **Status**: Dropped per user direction in favor of calendar integration due to Meta Graph API development mode restrictions on third-party public accounts.
+- **Specification**: Kept as optional legacy utility, but removed from active crawl pipeline.
+
+## Decision 13: Student Calendar Availability Integration (macOS Calendar.app) & Soft Conflict Gating Policy
+
+- **Date**: 2026-11-15
+- **Decision**: Read student's personal/class schedule from macOS Calendar.app via AppleScript and apply a Soft Conflict Warning policy before proactive recommendations.
+- **Approved by User**: Selected "macOS Native Calendar (Calendar.app)" and "Soft Conflict Warning".
 - **Specification**:
-  - **API Endpoint**: `GET https://graph.facebook.com/v21.0/{ig_user_id}?fields=business_discovery.username({handle}){media{caption,media_url,timestamp,permalink,media_type}}`
-  - **Authentication**: `INSTAGRAM_ACCESS_TOKEN` and `INSTAGRAM_ACCOUNT_ID` injected via environment variables.
-  - **Club Targets**: Target list of USC student organizations / club handles (e.g. `hackscofficial`, `ai.usc`, `caisplusplus`, `usc_acm`, `usclavalab`, etc.).
-  - **LLM Extraction**: Post captions are evaluated by `muse-ember-1.0` to determine if a post announces an upcoming event and extract structured fields: `title`, `description`, `date_str`, `location`, `tags`, `has_free_food`, and `rsvp_url` (or permalink).
-  - **Database Integration**: Validated events are stored in `memory.db`'s `campus_events` table with generated vector embeddings, feeding directly into Tommy's proactive recommendation pipeline.
+  1. **Calendar Ingestion**: A dedicated module `calendar_reader.py` queries macOS `Calendar.app` via `osascript` to retrieve all events/busy blocks for target date ranges across all synced accounts (iCloud, Google Calendar, USC Outlook/Exchange).
+  2. **Schedule Conflict Evaluation**: Cross-references campus event start/end times against the student's busy schedule blocks.
+  3. **Soft Conflict Warning Policy**:
+     - If the student is free, marks event as `schedule_status: "free"`.
+     - If the event conflicts with an existing commitment, marks event as `schedule_status: "conflict"` and attaches the conflicting event title (e.g., `CS 402 Lecture` or `Team Meeting`).
+     - Passes this conflict awareness directly into Tommy's prompt (`muse-ember-1.0`), directing Tommy to proactively acknowledge the conflict in the iMessage (e.g., *"Heads up: I know you have CS 402 at that time, but in case you get out early, HackSC kickoff starts right after at 6 PM in Ginsburg Hall..."*).
+  4. **Fallback / Mock Support**: Includes graceful fallback if Calendar automation permissions are not yet granted or when running dry-run simulations.
 
 
 

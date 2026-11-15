@@ -111,15 +111,21 @@ The system includes an automated event pipeline (`pipeline_events.py`) that craw
 [Cron / Schedule Trigger]
            │
            ▼
-[crawl_usc_events.py] ──(Calendar + EngageSC + Instagram)──► [memory.db: campus_events]
+[crawl_usc_events.py] ──(USC Calendar + EngageSC)──► [memory.db: campus_events]
                                                               │
                                                       (Vector & Signal Match)
                                                               ▼
                                                    [student_profiles & Dedup]
                                                               │
-                                                        (Matches Found)
+                                     ┌────────────────────────┴────────────────────────┐
+                                     ▼                                                 ▼
+                          [calendar_reader.py]                             (Top Matched Events)
+                         (macOS Calendar.app)                                          │
+                                     │                                                 │
+                                     └────────────────────────┬────────────────────────┘
                                                               ▼
                                                 [llm_client.py: Tommy Wake-Up]
+                                                 (Schedule & Conflict-Aware SMS)
                                                               │
                                                         (1-2 sentence text)
                                                               ▼
@@ -152,21 +158,26 @@ Add the following line (replace with your absolute Python and repo paths):
 0 9 * * * cd /path/to/ChatSC && python3 pipeline_events.py >> /path/to/ChatSC/pipeline.log 2>&1
 ```
 
-### 4. Ingesting Campus Club Events from Instagram
-The system supports ingesting events from public USC club Instagram business accounts (`crawl_instagram_events.py`) via Meta's Graph API Business Discovery:
+### 4. Student Calendar Availability & Schedule-Aware Recommendations
+The recommender integrates directly with macOS `Calendar.app` (`calendar_reader.py`) to inspect the student's personal schedule (synced Google Calendar, iCloud, or USC Outlook/Exchange) before sending recommendations:
+- **Zero Configuration**: Reads native macOS Calendar without requiring external OAuth credentials or calendar subscription tokens.
+- **Soft Conflict Warning Policy**: If a recommended event overlaps with a class or existing commitment, Tommy proactively notes the conflict in the iMessage (*"Heads up: I saw you have [Class/Event] around then, but if your schedule opens up, [Campus Event] is happening..."*).
+- **Free Schedule Highlighting**: If the student's calendar is clear, Tommy encourages attendance knowing the student has free time.
+
 ```bash
-# Test run with mock Instagram club posts
-python3 crawl_instagram_events.py --mock --dry-run
+# Run pipeline with live macOS Calendar check
+python3 pipeline_events.py --dry-run --target-user "+12135550100"
 
-# Run live with Meta Graph API credentials
-export INSTAGRAM_ACCOUNT_ID="your_ig_business_account_id"
-export INSTAGRAM_ACCESS_TOKEN="your_meta_access_token"
-python3 crawl_instagram_events.py --clubs "hackscofficial,caisplusplus,usclavalab,usc_acm"
+# Optional: Run with mock calendar schedule
+python3 pipeline_events.py --dry-run --target-user "+12135550100" --mock-calendar
+
+# Optional: Disable calendar checking
+python3 pipeline_events.py --dry-run --target-user "+12135550100" --no-calendar
 ```
-*When configured, `pipeline_events.py` automatically incorporates Instagram club feeds into its multi-source crawl cycle.*
 
-### Anti-Spam Gating Policy:
+### Anti-Spam & Schedule Gating Policy:
 - **Deduplication**: Recommended events are stored in `sent_recommendations (phone_or_email, event_id)` and are strictly never re-sent.
+- **Calendar Availability**: Evaluates real-time schedule conflicts against macOS Calendar.app (synced Google, iCloud, or USC Outlook/Exchange) with soft conflict warning.
 - **Signal Relevance**: Only events matching student coursework (e.g. `CS 572`), clubs (`AI@USC`, `HackSC`), or core interests (`Autonomous Agents`, `AI`, `Hackathons`, `Free Food`) are selected.
 - **Throttling**: Limited to 1-2 top events per wake-up cycle.
 

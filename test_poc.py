@@ -171,5 +171,39 @@ class TestIMessagePOC(unittest.TestCase):
         self.assertEqual(count, 2)
 
 
+    def test_calendar_conflict_evaluation(self):
+        import datetime
+        from calendar_reader import MacCalendarReader, parse_campus_event_interval
+
+        reader = MacCalendarReader(mock=True)
+        # Mock student schedule event: Wednesday, Nov 18 from 5 PM to 7:30 PM
+        student_events = [
+            {
+                "calendar": "student@usc.edu",
+                "summary": "Thanksgiving Celebration",
+                "start_dt": datetime.datetime(2026, 11, 18, 17, 0),
+                "end_dt": datetime.datetime(2026, 11, 18, 19, 30),
+            }
+        ]
+
+        # 1. Direct overlap: Nov 18 @ 6 PM - 8 PM
+        eval_conflict = reader.evaluate_conflict("Wed, Nov 18, 2026 6 PM - 8 PM", student_events)
+        self.assertTrue(eval_conflict["has_conflict"])
+        self.assertEqual(eval_conflict["status"], "conflict")
+        self.assertEqual(eval_conflict["conflicting_event"], "Thanksgiving Celebration")
+
+        # 2. Non-overlapping time on same day: Nov 18 @ 12 PM - 1 PM
+        eval_free = reader.evaluate_conflict("Wed, Nov 18, 2026 12 PM - 1 PM", student_events)
+        self.assertFalse(eval_free["has_conflict"])
+        self.assertEqual(eval_free["status"], "free")
+        self.assertIn("Thanksgiving Celebration (5:00 PM - 7:30 PM)", eval_free["busy_same_day"])
+
+        # 3. Different day: Nov 19 @ 6 PM - 8 PM
+        eval_diff_day = reader.evaluate_conflict("Thu, Nov 19, 2026 6 PM - 8 PM", student_events)
+        self.assertFalse(eval_diff_day["has_conflict"])
+        self.assertEqual(eval_diff_day["status"], "free")
+        self.assertEqual(len(eval_diff_day["busy_same_day"]), 0)
+
+
 if __name__ == "__main__":
     unittest.main()
