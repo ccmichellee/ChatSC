@@ -54,10 +54,10 @@ export default function Home() {
 
           <div className="rise mx-auto w-full max-w-[440px]" style={{ animationDelay: "120ms" }}>
             <img
-              src={`${import.meta.env.BASE_URL}chatsc-phone-example.png`}
+              src={`${import.meta.env.BASE_URL}chatsc-phone-transparent.png`}
               alt="Example ChatSC text conversation recommending a performing arts event based on a student's interests, then sharing the date, time, and location."
-              width={383}
-              height={652}
+              width={646}
+              height={1100}
               fetchPriority="high"
               data-testid="image-text-conversation"
               className="h-auto w-full drop-shadow-[0_24px_30px_hsl(0_35%_12%/.2)]"

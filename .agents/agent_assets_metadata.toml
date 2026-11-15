@@ -1,0 +1,16 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "Lo12TlF6tJosKBfmj7RYN"
+uri = "file://artifacts/chatsc/public/chatsc-phone-transparent.png"
+type = "image"
+title = "Phone image with transparent background"
+description = "Updated phone image used on the ChatSC homepage."
+logical_id = "0a1290ee-2581-4465-8a84-93dd40d77da7"
+content_hash = "sha256:d1e4e1a8ccddb470dfb4b8a6c93057d589840a15b7d23b4684745ec2ca0a9988"
+size = 254686
+mtime_ms = 1794765131645
+storage_uri = "gcs://replit-rams-assets-spock/rams/assets/repl:9646d992-dfd7-4d33-bc9a-10bb2900abde/0a1290ee-2581-4465-8a84-93dd40d77da7/f10169dc-812d-4628-9e6b-edfcd3584b5a"
+storage_version_token = "1794765160846808"
+content_type = "image/png"
