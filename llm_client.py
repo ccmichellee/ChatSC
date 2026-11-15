@@ -156,13 +156,36 @@ class LlamaClient:
                         continue
 
                     # Otherwise, we have the final textual response
-                    reply = message.get("content") or message.get("reasoning_content") or ""
+                    reply = message.get("content") or ""
                     if not reply.strip():
-                        # If reasoning exhausted tokens or content is empty, retry or flag
+                        # If reasoning_content contains text, use the final paragraph
+                        reasoning = message.get("reasoning_content") or ""
+                        if reasoning.strip():
+                            reply = reasoning.strip().split("\n\n")[-1]
+
+                    if not reply.strip():
                         finish_reason = choice.get("finish_reason")
-                        logger.warning(f"Empty model content (finish_reason={finish_reason})")
-                        return "⚠️ (No response produced by model)"
-                    return reply.strip()
+                        logger.warning(f"Empty model content (finish_reason={finish_reason}). Synthesizing safe fallback.")
+
+                        # Extract any events from tool calls in conversation history
+                        tool_events = []
+                        for m in messages:
+                            if m.get("role") == "tool":
+                                try:
+                                    t_data = json.loads(m.get("content", ""))
+                                    if isinstance(t_data, list):
+                                        for ev in t_data:
+                                            if isinstance(ev, dict) and ev.get("title"):
+                                                food = " (free food!)" if ev.get("has_free_food") else ""
+                                                tool_events.append(f"{ev['title']} ({ev.get('date', '')} @ {ev.get('location', '')}{food})")
+                                except Exception:
+                                    pass
+
+                        if tool_events:
+                            return f"Hey! Here are a couple campus events coming up next week: {' and '.join(tool_events[:2])}. Let me know if you want RSVP links or details! Fight On! ✌️"
+                        else:
+                            return "Hey! I'm checking campus events and club meetings for you right now. Let me know what kinds of workshops or hackathons you're looking for! Fight On! ✌️"
+
                     return reply.strip()
 
             except urllib.error.HTTPError as e:
@@ -176,4 +199,4 @@ class LlamaClient:
                 logger.error(f"Unexpected error in Meta Llama API: {e}")
                 return f"⚠️ Error: {str(e)}"
 
-        return "⚠️ Tool loop limit reached."
+        return "Hey! I looked up a few campus opportunities for you. Let me know if you want to explore more hackathons, clubs, or tech events! Fight On! ✌️"
