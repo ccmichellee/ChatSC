@@ -1,3 +1,4 @@
+- [Python publishing paths](python-publishing.md) — production commands start at the repository root, unlike the API's artifact-local development command.
 - [Calendar dependency compatibility](calendar-dependencies.md) — coordinate FullCalendar package upgrades; independent latest versions can be incompatible despite passing TypeScript.
 - [Campus photography](campus-imagery.md) — use authentic, properly licensed USC campus photography, not generated campus imagery.
 - [ChatSC recommendation agent](toji-integration.md) — position ChatSC around tailored campus opportunities delivered by text; never imply texting is live until connected.

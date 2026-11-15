@@ -13,10 +13,10 @@ paths = ["/api"]
 run = "cd ../.. && python web/api/run.py"
 
 [services.production]
-build = ["sh", "-c", "cd ../.. && uv sync --no-dev"]
+build = ["sh", "-c", "uv export --frozen --no-dev --no-emit-project --output-file /tmp/chatsc-requirements.txt && uv pip install --prefix .pythonlibs --requirements /tmp/chatsc-requirements.txt"]
 
 [services.production.run]
-args = ["sh", "-c", "cd ../.. && python web/api/run.py"]
+args = ["python", "web/api/run.py"]
 
 [services.production.run.env]
 PORT = "8080"
