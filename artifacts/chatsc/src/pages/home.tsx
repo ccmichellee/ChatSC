@@ -64,7 +64,7 @@ export default function Home() {
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Link href="/onboarding" data-testid="button-onboard" className="group inline-flex min-h-13 items-center justify-center gap-3 rounded-full bg-primary px-6 py-3.5 font-semibold text-primary-foreground shadow-[0_12px_28px_-16px_hsl(0_100%_25%/.8)] transition-transform hover:-translate-y-0.5">
-                {profile?.onboarded ? "Update my preferences" : "Build my recommendations"}
+                {profile?.onboarded ? "Update my preferences" : "Start Onboarding"}
                 <ArrowRight size={18} className="transition-transform group-hover:translate-x-1" />
               </Link>
               <Link href="/events" data-testid="link-browse" className="inline-flex min-h-13 items-center justify-center gap-2 rounded-full border border-foreground/25 bg-card/45 px-6 py-3.5 font-semibold transition-colors hover:border-foreground hover:bg-card">
@@ -73,7 +73,10 @@ export default function Home() {
             </div>
             <div className="mt-7 flex max-w-lg items-start gap-3 border-l-2 border-accent pl-4 text-sm leading-6 text-muted-foreground">
               <Sparkles size={16} className="mt-1 shrink-0 text-primary" />
-              <p>Personalized picks start with your preferences. SMS delivery isn’t connected in this preview, so explore recommendations here on the site.</p>
+              <p>
+                Text TROJAN to <span className="font-semibold text-foreground">[short code coming soon]</span> to start.
+                <span className="mt-1 block">The number and text signup aren’t active in this preview. Use Start Onboarding to share your preferences.</span>
+              </p>
             </div>
           </div>
 
