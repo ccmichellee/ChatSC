@@ -1,43 +1,18 @@
-import { useEffect, useMemo, useState } from "react";
+import { useState } from "react";
 import { Link } from "wouter";
-import { useQueryClient } from "@tanstack/react-query";
-import { ArrowRight, ArrowUpRight, BriefcaseBusiness, CalendarDays, Compass, MapPinned, RefreshCw, Sparkles, UsersRound } from "lucide-react";
-import { useGetEvents, useGetProfile, useGetRecommendations, useGetSummary, useRefreshEvents, getGetRecommendationsQueryKey, getGetEventsQueryKey, getGetSummaryQueryKey, type CampusEvent } from "@workspace/api-client-react";
-import { useToast } from "@/hooks/use-toast";
+import { ArrowRight, ArrowUpRight, BriefcaseBusiness, CalendarDays, Compass, MapPinned, Sparkles, UsersRound } from "lucide-react";
+import { useGetProfile, useGetRecommendations, useGetSummary, getGetRecommendationsQueryKey, type CampusEvent } from "@workspace/api-client-react";
 import { EventCard, EventDialog } from "@/components/events-ui";
-import { CardSkeleton, EmptyState, ErrorState } from "@/components/bits";
-import { isConflict, timeAgo } from "@/lib/campus";
-import { upcomingEvents } from "@/lib/upcoming-events";
+import { CardSkeleton, ErrorState } from "@/components/bits";
+import { isConflict } from "@/lib/campus";
 
 export default function Home() {
-  const qc = useQueryClient();
-  const { toast } = useToast();
   const { data: profile } = useGetProfile();
   const user = profile?.onboarded ? profile.user : "";
-  const events = useGetEvents();
   const summary = useGetSummary();
   const recs = useGetRecommendations({ user }, { query: { enabled: !!user, queryKey: getGetRecommendationsQueryKey({ user }) } });
-  const refresh = useRefreshEvents();
   const [open, setOpen] = useState<CampusEvent | null>(null);
   const blocks = profile?.availability ?? [];
-  const [now, setNow] = useState(Date.now);
-  useEffect(() => {
-    const tick = () => setNow(Date.now());
-    const timer = window.setInterval(tick, 30_000);
-    window.addEventListener("focus", tick);
-    return () => { window.clearInterval(timer); window.removeEventListener("focus", tick); };
-  }, []);
-  const next4 = useMemo(() => upcomingEvents(events.data ?? [], now), [events.data, now]);
-
-  const doRefresh = () => refresh.mutate(undefined, {
-    onSuccess: (r) => {
-      qc.invalidateQueries({ queryKey: getGetEventsQueryKey() });
-      qc.invalidateQueries({ queryKey: getGetSummaryQueryKey() });
-      qc.invalidateQueries({ queryKey: ["/api/recommendations"] });
-      toast({ title: "Feed refreshed", description: r.message || `${r.count} events loaded.` });
-    },
-    onError: () => toast({ title: "Refresh failed", description: "Please try again in a moment.", variant: "destructive" }),
-  });
 
   const s = summary.data;
   const browse = [
@@ -98,30 +73,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-5 pt-14 sm:px-8 lg:px-12" aria-label="Campus listing totals">
-        <div className="flex flex-col gap-5 border-b border-border pb-5 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <p className="font-mono text-[10px] uppercase tracking-[.2em] text-primary">A clearer view of campus</p>
-            <h2 className="mt-2 font-display text-2xl font-extrabold tracking-tight sm:text-3xl">All the good stuff, gathered.</h2>
-          </div>
-          <p className="text-sm text-muted-foreground">{s?.last_updated ? timeAgo(s.last_updated) : "Campus listings in one place"}</p>
-        </div>
-        <div className="grid grid-cols-1 divide-y divide-border sm:grid-cols-3 sm:divide-x sm:divide-y-0">
-          {browse.map(({ title, detail, href, icon: Icon, count }, index) => (
-            <Link key={title} href={href} className="group flex items-center gap-4 py-5 sm:px-5 sm:first:pl-0 sm:last:pr-0" data-testid={`browse-${title.toLowerCase().replaceAll(" ", "-")}`}>
-              <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-accent/50 text-primary transition-colors group-hover:bg-accent"><Icon size={21} /></span>
-              <span className="min-w-0 flex-1">
-                <span className="flex items-center gap-2 font-display text-lg font-bold">{title}<ArrowUpRight size={15} className="text-primary transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" /></span>
-                <span className="mt-0.5 block text-sm leading-5 text-muted-foreground">{detail}</span>
-              </span>
-              <span className="font-mono text-sm text-muted-foreground">{summary.isLoading ? "…" : count ?? "–"}</span>
-            </Link>
-          ))}
-        </div>
-        {s?.sample_data && <p className="mt-2 font-mono text-[10px] uppercase tracking-wide text-muted-foreground">Some listings are sample data and marked accordingly.</p>}
-      </section>
-
-      <section className="mx-auto mt-16 max-w-7xl px-5 sm:px-8 lg:px-12">
+      <section className="mx-auto mt-8 max-w-7xl px-5 sm:mt-12 sm:px-8 lg:px-12" aria-label="How personalized text recommendations work" data-testid="section-text-recommendations">
         <div className="grid overflow-hidden rounded-[2rem] border border-card-border bg-card md:grid-cols-[.8fr_1.2fr]">
           <div className="relative overflow-hidden bg-foreground p-7 text-background sm:p-9">
             <div className="home-rule absolute left-0 right-0 top-0 h-1" aria-hidden />
@@ -149,6 +101,22 @@ export default function Home() {
         </div>
       </section>
 
+      <section className="mx-auto mt-10 max-w-7xl px-5 sm:px-8 lg:px-12" aria-label="Browse campus listings">
+        <div className="grid grid-cols-1 divide-y divide-border rounded-2xl border border-border bg-card px-5 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+          {browse.map(({ title, detail, href, icon: Icon, count }) => (
+            <Link key={title} href={href} className="group flex items-center gap-4 py-5 sm:px-5 sm:first:pl-0 sm:last:pr-0" data-testid={`browse-${title.toLowerCase().replaceAll(" ", "-")}`}>
+              <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-accent/50 text-primary transition-colors group-hover:bg-accent"><Icon size={21} /></span>
+              <span className="min-w-0 flex-1">
+                <span className="flex items-center gap-2 font-display text-lg font-bold">{title}<ArrowUpRight size={15} className="shrink-0 text-primary transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" /></span>
+                <span className="mt-0.5 block text-sm leading-5 text-muted-foreground">{detail}</span>
+              </span>
+              <span className="font-mono text-sm text-muted-foreground">{summary.isLoading ? "…" : count ?? "–"}</span>
+            </Link>
+          ))}
+        </div>
+        {s?.sample_data && <p className="mt-2 text-[10px] text-muted-foreground">Some listings are sample data and marked accordingly.</p>}
+      </section>
+
       {user && (
         <section className="mt-16 bg-primary py-10 text-primary-foreground sm:py-12">
           <div className="mx-auto max-w-7xl px-5 sm:px-8 lg:px-12">
@@ -169,27 +137,6 @@ export default function Home() {
           </div>
         </section>
       )}
-
-      <section className="mx-auto mt-16 max-w-7xl px-5 sm:px-8 lg:px-12">
-        <div className="flex flex-wrap items-end justify-between gap-4 border-b border-border pb-5">
-          <div>
-            <p className="font-mono text-[10px] uppercase tracking-[.2em] text-primary">Fresh from campus</p>
-            <h2 className="mt-2 font-display text-3xl font-extrabold tracking-tight sm:text-4xl">Coming up next</h2>
-          </div>
-          <button onClick={doRefresh} disabled={refresh.isPending} data-testid="button-refresh" className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-4 py-2.5 text-sm font-semibold transition-colors hover:bg-secondary disabled:opacity-60">
-            <RefreshCw size={14} className={refresh.isPending ? "animate-spin" : ""} />{refresh.isPending ? "Refreshing" : "Refresh listings"}
-          </button>
-        </div>
-        <div className="mt-6 grid gap-4 md:grid-cols-2">
-          {events.isLoading && <CardSkeleton n={4} />}
-          {events.isError && <ErrorState what="events" onRetry={() => events.refetch()} />}
-          {events.data && next4.length === 0 && <EmptyState title="Nothing scheduled ahead" body="No upcoming events with confirmed times right now. Check the full list or refresh the feed." action={<Link href="/events" className="font-semibold text-primary underline">See all events</Link>} />}
-          {next4.map((e) => <EventCard key={e.id} ev={e} conflict={isConflict(e, blocks)} onOpen={() => setOpen(e)} />)}
-        </div>
-        <div className="mt-5 text-right">
-          <Link href="/events" className="inline-flex items-center gap-2 text-sm font-bold text-primary hover:underline">Browse all events <ArrowRight size={15} /></Link>
-        </div>
-      </section>
 
       <section className="mx-auto mt-16 grid max-w-7xl gap-4 px-5 sm:px-8 md:grid-cols-3 lg:px-12">
         <Link href="/map" className="group relative overflow-hidden rounded-[1.8rem] bg-foreground p-7 text-background transition-transform hover:-translate-y-1 md:col-span-2 sm:p-9">
