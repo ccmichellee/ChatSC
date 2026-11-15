@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "ChatSC"
+description = "USC campus events, clubs, and opportunities that fit your interests and class schedule."
+version = "1.0.0"
+id = "artifacts/chatsc"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 20553
+
+[services.development]
+run = "pnpm --filter @workspace/chatsc run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/chatsc", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/chatsc/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "20553"
+BASE_PATH = "/"

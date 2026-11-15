@@ -1,0 +1,1 @@
+"""ChatSC FastAPI web layer."""

@@ -1,36 +1,208 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
-  version: 0.1.0
-  description: API specification
+  version: 1.0.0
 servers:
   - url: /api
-    description: Base API path
-tags:
-  - name: health
-    description: Health operations
 paths:
   /healthz:
     get:
       operationId: healthCheck
-      tags: [health]
-      summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
           content:
             application/json:
-              schema:
-                $ref: "#/components/schemas/HealthStatus"
+              schema: { $ref: "#/components/schemas/HealthStatus" }
+  /events:
+    get:
+      operationId: getEvents
+      parameters:
+        - { name: q, in: query, schema: { type: string } }
+        - { name: tag, in: query, schema: { type: string } }
+        - { name: from, in: query, schema: { type: string } }
+        - { name: to, in: query, schema: { type: string } }
+        - { name: free_food, in: query, schema: { type: boolean } }
+      responses:
+        "200":
+          description: Events
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/CampusEvent" } }
+  /clubs:
+    get:
+      operationId: getClubs
+      parameters:
+        - { name: q, in: query, schema: { type: string } }
+        - { name: category, in: query, schema: { type: string } }
+      responses:
+        "200":
+          description: Clubs
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/Club" } }
+  /opportunities:
+    get:
+      operationId: getOpportunities
+      responses:
+        "200":
+          description: Fictional opportunities
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/Opportunity" } }
+  /onboarding:
+    post:
+      operationId: saveOnboarding
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/StudentInput" }
+      responses:
+        "200":
+          description: Saved profile
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StudentProfile" }
+  /profile:
+    get:
+      operationId: getProfile
+      responses:
+        "200":
+          description: Current browser profile
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StudentProfile" }
+  /recommendations:
+    get:
+      operationId: getRecommendations
+      parameters:
+        - { name: user, in: query, schema: { type: string } }
+      responses:
+        "200":
+          description: Nonconflicting matches
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/CampusEvent" } }
+  /refresh:
+    post:
+      operationId: refreshEvents
+      responses:
+        "200":
+          description: Crawl status
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RefreshStatus" }
+  /summary:
+    get:
+      operationId: getSummary
+      responses:
+        "200":
+          description: Campus discovery summary
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CampusSummary" }
 components:
   schemas:
     HealthStatus:
       type: object
+      required: [status]
       properties:
-        status:
-          type: string
-      required:
-        - status
-
+        status: { type: string }
+    CampusEvent:
+      type: object
+      required: [id, title, host, date_str, location, description, tags, free_food, source, source_url, updated_at, sample_data, category, start, end, lat, lng]
+      properties:
+        id: { type: integer }
+        title: { type: string }
+        host: { type: string }
+        date_str: { type: string }
+        location: { type: string }
+        description: { type: string }
+        tags: { type: array, items: { type: string } }
+        free_food: { type: boolean }
+        source: { type: string }
+        source_url: { type: string }
+        updated_at: { type: ["string", "null"] }
+        sample_data: { type: boolean }
+        category: { type: string }
+        start: { type: ["string", "null"] }
+        end: { type: ["string", "null"] }
+        lat: { type: ["number", "null"] }
+        lng: { type: ["number", "null"] }
+        conflict: { type: boolean }
+        match_score: { type: number }
+        matched_reasons: { type: array, items: { type: string } }
+    Club:
+      type: object
+      required: [id, name, category, description, meeting_times, source_url, sample_data]
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        category: { type: string }
+        description: { type: string }
+        meeting_times: { type: string }
+        source_url: { type: string }
+        sample_data: { type: boolean }
+    Opportunity:
+      type: object
+      required: [id, title, organization, type, description, deadline, location, url, sample_data]
+      properties:
+        id: { type: integer }
+        title: { type: string }
+        organization: { type: string }
+        type: { type: string }
+        description: { type: string }
+        deadline: { type: ["string", "null"] }
+        location: { type: string }
+        url: { type: string }
+        sample_data: { type: boolean }
+    ClassBlock:
+      type: object
+      required: [day, start, end, title]
+      properties:
+        day: { type: integer, minimum: 0, maximum: 6, description: "0=Monday, 6=Sunday" }
+        start: { type: string }
+        end: { type: string }
+        title: { type: string }
+    StudentInput:
+      type: object
+      required: [phone, consent, interests, availability, frequency]
+      properties:
+        phone: { type: string }
+        consent: { type: boolean }
+        interests: { type: array, items: { type: string } }
+        availability: { type: array, items: { $ref: "#/components/schemas/ClassBlock" } }
+        frequency: { type: string, enum: [daily, weekly, twice-weekly] }
+        name: { type: string }
+    StudentProfile:
+      type: object
+      required: [user, onboarded, consent, interests, availability, frequency, name]
+      properties:
+        user: { type: string }
+        onboarded: { type: boolean }
+        consent: { type: boolean }
+        interests: { type: array, items: { type: string } }
+        availability: { type: array, items: { $ref: "#/components/schemas/ClassBlock" } }
+        frequency: { type: string }
+        name: { type: string }
+    RefreshStatus:
+      type: object
+      required: [status, count, message, sample_data]
+      properties:
+        status: { type: string }
+        count: { type: integer }
+        message: { type: string }
+        sample_data: { type: boolean }
+    CampusSummary:
+      type: object
+      required: [events, clubs, opportunities, free_food, tags, categories, last_updated, sample_data]
+      properties:
+        events: { type: integer }
+        clubs: { type: integer }
+        opportunities: { type: integer }
+        free_food: { type: integer }
+        tags: { type: array, items: { type: string } }
+        categories: { type: array, items: { type: string } }
+        last_updated: { type: ["string", "null"] }
+        sample_data: { type: boolean }

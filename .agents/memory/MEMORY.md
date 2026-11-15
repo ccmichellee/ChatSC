@@ -1,0 +1,1 @@
+- [Calendar dependency compatibility](calendar-dependencies.md) — coordinate FullCalendar package upgrades; independent latest versions can be incompatible despite passing TypeScript.

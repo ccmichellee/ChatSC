@@ -1,45 +1,40 @@
-# [Project name]
+# ChatSC
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+A responsive USC campus opportunity finder with live events, club discovery, a campus map, and class-schedule-aware recommendations.
 
 ## Run & Operate
 
-- `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
-- `pnpm run typecheck` — full typecheck across all packages
-- `pnpm run build` — typecheck + build all packages
-- `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
-- `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- Required env: `DATABASE_URL` — Postgres connection string
+- Managed API workflow: `artifacts/api-server: API Server` runs the Python FastAPI layer.
+- Managed frontend workflow: `artifacts/chatsc: web` runs React + Vite at `/`.
+- `pnpm --filter @workspace/chatsc run typecheck` checks the frontend.
+- `pnpm --filter @workspace/api-spec run codegen` regenerates API hooks and schemas.
+- Python dependencies are declared in `pyproject.toml` and `uv.lock`.
+- No API keys or login are required.
 
-## Stack
+## Project structure
 
-- pnpm workspaces, Node.js 24, TypeScript 5.9
-- API: Express 5
-- DB: PostgreSQL + Drizzle ORM
-- Validation: Zod (`zod/v4`), `drizzle-zod`
-- API codegen: Orval (from OpenAPI spec)
-- Build: esbuild (CJS bundle)
+- Original Python repository modules are retained unchanged at the root.
+- `web/api/` contains the new FastAPI routes, metadata adapter, and crawler integration.
+- `web/frontend` links to `artifacts/chatsc`, the React/Vite/Tailwind app.
+- `data/opportunities.json` contains exactly 12 explicitly fictional sample listings.
+- `lib/api-spec/openapi.yaml` is the web API contract.
+- `memory.db` is the existing SQLite store, intentionally excluded from Git.
 
-## Where things live
+## User requirements
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- Do not rewrite, delete, run, or import the macOS-only bot, iMessage reader, or iMessage sender.
+- Keep the original Python source unchanged; add web functionality alongside it.
+- Keep SQLite and reuse the original MemoryStore and crawlers, not PostgreSQL.
+- Remind me and Verify are explicitly simulated UI controls. No SMS is sent.
+- Label all fallback events, fallback clubs, and fictional opportunities “Sample data.”
+- Never invent missing locations, event deadlines, requirements, or event durations.
+- Preserve unparseable event dates for lists; exclude them from calendars and conflict checks.
 
-## Architecture decisions
+## Web behavior
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
-
-## Product
-
-_Describe the high-level user-facing capabilities of this app once they exist._
-
-## User preferences
-
-_Populate as you build — explicit user instructions worth remembering across sessions._
-
-## Gotchas
-
-_Populate as you build — sharp edges, "always run X before Y" rules._
-
-## Pointers
-
-- See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details
+- Anonymous HTTP-only browser cookies scope saved profiles; phones are not public profile identifiers.
+- Additional SQLite metadata tables preserve source links and crawl timestamps without changing original tables.
+- Live crawler calls use `crawl_events(days=30, max_pages=2)` and tolerate unavailable sources.
+- The original seed function supplies fallback records; additional clearly fictional dated samples support calendar previews.
+- Event and schedule time zone is America/Los_Angeles; class-block day zero is Monday.
+- The shared proxy routes `/api` to FastAPI and `/` to Vite; no browser-visible localhost URLs are used.
