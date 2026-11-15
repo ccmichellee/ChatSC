@@ -4,6 +4,7 @@ import { useGetOpportunities, type Opportunity } from "@workspace/api-client-rea
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { CardSkeleton, EmptyState, ErrorState, PageHead, SampleBadge, Tag } from "@/components/bits";
 import { fmtDay } from "@/lib/campus";
+import { OrganizationLogo } from "@/components/organization-logo";
 
 const WEEK = 7 * 864e5;
 export default function Opportunities() {
@@ -32,8 +33,9 @@ export default function Opportunities() {
           const t = o.deadline ? new Date(o.deadline).getTime() : NaN;
           const soon = !isNaN(t) && t >= now - 864e5 && t - now <= WEEK;
           return (
-            <article key={o.id} className={`rounded-3xl border p-5 grid md:grid-cols-[1fr_auto] gap-4 items-center transition-transform hover:-translate-y-0.5 ${soon ? "bg-accent/20 border-accent border-2" : "bg-card border-card-border"}`} data-testid={`card-opp-${o.id}`}>
-              <div>
+            <article key={o.id} className={`rounded-3xl border p-5 grid grid-cols-[auto_minmax(0,1fr)] md:grid-cols-[auto_minmax(0,1fr)_auto] gap-4 items-center transition-transform hover:-translate-y-0.5 ${soon ? "bg-accent/20 border-accent border-2" : "bg-card border-card-border"}`} data-testid={`card-opp-${o.id}`}>
+              <div className="self-start"><OrganizationLogo organization={o.organization} /></div>
+              <div className="min-w-0 break-words">
                 <div className="flex flex-wrap items-center gap-2"><span className="font-mono text-[11px] uppercase tracking-wider text-primary">{o.type}</span><SampleBadge show={o.sample_data} />{soon && <span className="rounded-full bg-primary text-primary-foreground px-2 py-0.5 text-[10px] font-bold uppercase">Due within 7 days</span>}</div>
                 <h3 className="font-display text-xl font-bold mt-1">{o.title}</h3>
                 <p className="text-sm text-muted-foreground mt-1">{o.description}</p>
@@ -43,7 +45,7 @@ export default function Opportunities() {
                   <span className="flex items-center gap-1"><CalendarClock size={14} className="text-primary" />{o.deadline ? `Due ${fmtDay(o.deadline)}` : "Rolling deadline"}</span>
                 </div>
               </div>
-              <button onClick={() => setApply(o)} data-testid={`button-apply-${o.id}`} className="rounded-full bg-primary text-primary-foreground px-5 py-2.5 font-semibold hover:-translate-y-0.5 transition-transform">Apply</button>
+              <button onClick={() => setApply(o)} data-testid={`button-apply-${o.id}`} className="col-span-2 md:col-span-1 rounded-full bg-primary text-primary-foreground px-5 py-2.5 font-semibold hover:-translate-y-0.5 transition-transform">Apply</button>
             </article>
           );
         })}
