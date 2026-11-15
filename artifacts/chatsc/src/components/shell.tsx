@@ -19,7 +19,7 @@ export function Shell({ children }: { children: ReactNode }) {
       <header className="sticky top-0 z-50 bg-background/85 backdrop-blur-md border-b border-border">
         <div className="max-w-6xl mx-auto px-4 h-14 flex items-center gap-3">
           <Link href="/" className="flex items-center gap-2 shrink-0" data-testid="link-logo">
-            <span className="grid place-items-center w-8 h-8 rounded-xl bg-primary text-primary-foreground font-display font-extrabold">C</span>
+            <img src={`${import.meta.env.BASE_URL}usc-logo.webp`} alt="" width={40} height={40} className="h-10 w-10 rounded-lg object-cover" />
             <span className="font-display text-xl font-extrabold tracking-tight text-[#990000]">Chat<span className="text-[#FFCC00]">SC</span></span>
           </Link>
           <nav aria-label="Primary" className="hidden md:flex items-center gap-1 ml-6">
