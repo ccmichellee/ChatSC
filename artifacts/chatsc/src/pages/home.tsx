@@ -68,7 +68,7 @@ export default function Home() {
                 <ArrowRight size={18} className="transition-transform group-hover:translate-x-1" />
               </Link>
               <Link href="/events" data-testid="link-browse" className="inline-flex min-h-13 items-center justify-center gap-2 rounded-full border border-foreground/25 bg-card/45 px-6 py-3.5 font-semibold transition-colors hover:border-foreground hover:bg-card">
-                Explore campus listings <ArrowUpRight size={16} />
+                Browse events <ArrowUpRight size={16} />
               </Link>
             </div>
             <div className="mt-7 flex max-w-lg items-start gap-3 border-l-2 border-accent pl-4 text-sm leading-6 text-muted-foreground">
