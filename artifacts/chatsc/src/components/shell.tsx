@@ -7,7 +7,7 @@ const links = [
   { href: "/events", label: "Events" },
   { href: "/map", label: "Map" },
   { href: "/calendar", label: "Calendar" },
-  { href: "/clubs", label: "Clubs" },
+  { href: "/clubs", label: "Discover" },
   { href: "/opportunities", label: "Opportunities" },
 ];
 
@@ -34,7 +34,7 @@ export function Shell({ children }: { children: ReactNode }) {
           {links.map((l) => <NavLink key={l.href} {...l} active={loc === l.href} />)}
         </nav>
       </header>
-      <main id="main" className="flex-1">{children}</main>
+      <main id="main" className="min-w-0 flex-1">{children}</main>
       <footer className="border-t border-border mt-16">
         <div className="max-w-6xl mx-auto px-4 py-8 text-sm text-muted-foreground flex flex-col md:flex-row gap-2 justify-between">
           <p><span className="font-display font-bold text-foreground">ChatSC</span> is an independent student guide, not an official USC service.</p>
