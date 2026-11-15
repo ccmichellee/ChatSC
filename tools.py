@@ -97,10 +97,12 @@ def execute_tool(name: str, arguments: Dict[str, Any], current_user: str) -> str
         elif name == "check_student_calendar":
             days = arguments.get("days_ahead", 14)
             cal_events = cal_reader.get_upcoming_events(days_ahead=days)
-            summary_list = [
-                f"{e['summary']} on {e['start_dt'].strftime('%A, %b %-d from %-I:%M %p')} to {e['end_dt'].strftime('%-I:%M %p')}"
-                for e in cal_events
-            ]
+            summary_list = []
+            for e in cal_events:
+                loc_str = f" @ {e['location']}" if e.get("location") else ""
+                summary_list.append(
+                    f"{e['summary']} on {e['start_dt'].strftime('%A, %b %-d from %-I:%M %p')} to {e['end_dt'].strftime('%-I:%M %p PST')}{loc_str}"
+                )
             return json.dumps({
                 "calendar_events": summary_list if summary_list else f"Calendar is completely clear for the next {days} days."
             }, indent=2)

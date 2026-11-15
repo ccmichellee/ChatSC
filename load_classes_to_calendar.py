@@ -15,16 +15,16 @@ logger = logging.getLogger("load_classes")
 
 # Weekly class schedule definitions (day_of_week: 0=Mon, 1=Tue, 2=Wed, 3=Thu, 4=Fri)
 CLASS_SCHEDULE = [
-    # CS 402 Lectures: Monday & Wednesday 10:00 AM - 11:50 AM
-    {"day": 0, "title": "CS 402: Operating Systems (Lecture)", "start_time": (10, 0), "end_time": (11, 50), "location": "THH 101"},
-    {"day": 2, "title": "CS 402: Operating Systems (Lecture)", "start_time": (10, 0), "end_time": (11, 50), "location": "THH 101"},
+    # CSCI 402: Operating Systems (Monday, Wednesday, Friday 10:00 AM - 11:50 AM @ OHE132)
+    {"day": 0, "title": "CSCI 402: Operating Systems", "start_time": (10, 0), "end_time": (11, 50), "location": "OHE132"},
+    {"day": 2, "title": "CSCI 402: Operating Systems", "start_time": (10, 0), "end_time": (11, 50), "location": "OHE132"},
+    {"day": 4, "title": "CSCI 402: Operating Systems", "start_time": (10, 0), "end_time": (11, 50), "location": "OHE132"},
 
-    # CS 572 Lectures: Tuesday & Thursday 2:00 PM - 3:20 PM
-    {"day": 1, "title": "CS 572: Information Retrieval (Lecture)", "start_time": (14, 0), "end_time": (15, 20), "location": "OHE 122"},
-    {"day": 3, "title": "CS 572: Information Retrieval (Lecture)", "start_time": (14, 0), "end_time": (15, 20), "location": "OHE 122"},
+    # CSCI 591: Computer Science Research Colloquium (Tuesday 4:00 PM - 5:20 PM @ OHE100C)
+    {"day": 1, "title": "CSCI 591: Computer Science Research Colloquium", "start_time": (16, 0), "end_time": (17, 20), "location": "OHE100C"},
 
-    # CS 402 Discussion Section: Friday 12:00 PM - 1:50 PM
-    {"day": 4, "title": "CS 402: Operating Systems (Discussion)", "start_time": (12, 0), "end_time": (13, 50), "location": "SAL 126"},
+    # CSCI 572: Information Retrieval and Web Search Engines (Thursday 5:00 PM - 8:00 PM @ SGM123)
+    {"day": 3, "title": "CSCI 572: Information Retrieval and Web Search Engines", "start_time": (17, 0), "end_time": (20, 0), "location": "SGM123"},
 ]
 
 

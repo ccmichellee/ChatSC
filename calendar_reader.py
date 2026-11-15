@@ -3,6 +3,7 @@ import logging
 import os
 import re
 import subprocess
+import time
 from typing import Any, Dict, List, Optional, Tuple
 
 logger = logging.getLogger("calendar_reader")
@@ -23,6 +24,81 @@ MONTH_MAP = {
     "jan": 1, "feb": 2, "mar": 3, "apr": 4, "may": 5, "jun": 6,
     "jul": 7, "aug": 8, "sep": 9, "oct": 10, "nov": 11, "dec": 12
 }
+
+# Student's enrolled weekly recurring class schedule (in USC Pacific Time, PST)
+RECURRING_WEEKLY_SCHEDULE = [
+    # Monday: CSCI 402 Operating Systems
+    {
+        "day": 0,
+        "title": "CSCI 402: Operating Systems",
+        "start_time": (10, 0),
+        "end_time": (11, 50),
+        "location": "OHE132",
+        "calendar": "linero@usc.edu"
+    },
+    # Tuesday: CSCI 591 Computer Science Research Colloquium
+    {
+        "day": 1,
+        "title": "CSCI 591: Computer Science Research Colloquium",
+        "start_time": (16, 0),
+        "end_time": (17, 20),
+        "location": "OHE100C",
+        "calendar": "linero@usc.edu"
+    },
+    # Wednesday: CSCI 402 Operating Systems
+    {
+        "day": 2,
+        "title": "CSCI 402: Operating Systems",
+        "start_time": (10, 0),
+        "end_time": (11, 50),
+        "location": "OHE132",
+        "calendar": "linero@usc.edu"
+    },
+    # Thursday: Impatico Builders Work Session
+    {
+        "day": 3,
+        "title": "Impatico | Builders Work Session",
+        "start_time": (14, 0),
+        "end_time": (15, 30),
+        "location": "meet.google.com",
+        "calendar": "Work"
+    },
+    # Thursday: CSCI 572 Information Retrieval and Web Search Engines
+    {
+        "day": 3,
+        "title": "CSCI 572: Information Retrieval and Web Search Engines",
+        "start_time": (17, 0),
+        "end_time": (20, 0),
+        "location": "SGM123",
+        "calendar": "linero@usc.edu"
+    },
+    # Friday: CSCI 402 Operating Systems
+    {
+        "day": 4,
+        "title": "CSCI 402: Operating Systems",
+        "start_time": (10, 0),
+        "end_time": (11, 50),
+        "location": "OHE132",
+        "calendar": "linero@usc.edu"
+    },
+    # Sunday: Tennis session sign up
+    {
+        "day": 6,
+        "title": "Tennis session sign up",
+        "start_time": (15, 50),
+        "end_time": (16, 50),
+        "location": "Online",
+        "calendar": "Calendar"
+    }
+]
+
+
+def get_pst_offset() -> datetime.timedelta:
+    """Calculates offset between local system time and USC Pacific Time (PST, UTC-8)."""
+    local_offset_sec = -time.timezone if time.daylight == 0 else -time.altzone
+    pst_offset_sec = -8 * 3600
+    diff_sec = local_offset_sec - pst_offset_sec
+    return datetime.timedelta(seconds=diff_sec)
 
 
 def parse_time_str(t_str: str, meridiem: str) -> datetime.time:
@@ -181,21 +257,40 @@ end tell
                     try:
                         start_dt = datetime.datetime.fromisoformat(start_str)
                         end_dt = datetime.datetime.fromisoformat(end_str)
+                        # Normalize local AppleScript dates to USC Pacific Time (PST)
+                        pst_offset = get_pst_offset()
+                        start_dt = start_dt - pst_offset
+                        end_dt = end_dt - pst_offset
                         events.append({
                             "calendar": cal_name,
                             "summary": summary,
-                            "start_iso": start_str,
-                            "end_iso": end_str,
+                            "start_iso": start_dt.isoformat(),
+                            "end_iso": end_dt.isoformat(),
                             "start_dt": start_dt,
                             "end_dt": end_dt,
                         })
                     except Exception as e:
                         logger.debug(f"Failed to parse datetime from '{start_str}': {e}")
 
-            logger.info(f"📅 Retrieved {len(events)} event(s) from student's macOS Calendar.app.")
-            self._cached_events = events
+            # Expand recurring weekly schedule across the query range
+            recurring_evs = self._expand_recurring_schedule(now.date(), now.date() + datetime.timedelta(days=days_ahead))
+
+            # Combine one-off events and recurring events
+            all_events = events + recurring_evs
+            # Deduplicate by (summary, start_dt)
+            seen = set()
+            unique_events = []
+            for ev in all_events:
+                key = (ev["summary"], ev["start_dt"])
+                if key not in seen:
+                    seen.add(key)
+                    unique_events.append(ev)
+
+            unique_events.sort(key=lambda x: x["start_dt"])
+            logger.info(f"📅 Retrieved {len(unique_events)} total event(s) (including recurring courses) for student.")
+            self._cached_events = unique_events
             self._cache_time = now
-            return events
+            return unique_events
 
         except subprocess.TimeoutExpired:
             logger.warning("Calendar AppleScript query timed out. Using fallback schedule.")
@@ -208,30 +303,58 @@ end tell
             self._cache_time = now
             return self._cached_events
 
+    def _expand_recurring_schedule(self, start_date: datetime.date, end_date: datetime.date) -> List[Dict[str, Any]]:
+        """
+        Expands the student's enrolled weekly recurring courses and commitments
+        (CSCI 402, CSCI 572, CSCI 591, Impatico, Tennis sign up) across the given date range.
+        Times are in USC Pacific Standard Time (PST).
+        """
+        recurring_events = []
+        current = start_date
+        semester_end = datetime.date(2026, 12, 12)
+
+        while current <= min(end_date, semester_end):
+            weekday = current.weekday()
+            for item in RECURRING_WEEKLY_SCHEDULE:
+                if item["day"] == weekday:
+                    sh, sm = item["start_time"]
+                    eh, em = item["end_time"]
+                    start_dt = datetime.datetime(current.year, current.month, current.day, sh, sm, 0)
+                    end_dt = datetime.datetime(current.year, current.month, current.day, eh, em, 0)
+
+                    recurring_events.append({
+                        "calendar": item.get("calendar", "linero@usc.edu"),
+                        "summary": item["title"],
+                        "location": item.get("location", ""),
+                        "start_iso": start_dt.isoformat(),
+                        "end_iso": end_dt.isoformat(),
+                        "start_dt": start_dt,
+                        "end_dt": end_dt,
+                        "is_recurring": True,
+                    })
+            current += datetime.timedelta(days=1)
+
+        return recurring_events
+
     def _get_mock_events(self) -> List[Dict[str, Any]]:
         """Fallback mock schedule for unit tests and offline simulations."""
         now = datetime.datetime.now()
         base_date = now.replace(hour=0, minute=0, second=0, microsecond=0)
-
-        # Realistic student schedule blocks
-        mock_items = [
-            ("student@usc.edu", "CS 402: Operating Systems Lecture", base_date + datetime.timedelta(days=1, hours=10), base_date + datetime.timedelta(days=1, hours=11, minutes=50)),
-            ("student@usc.edu", "CS 572: Information Retrieval Lab", base_date + datetime.timedelta(days=2, hours=14), base_date + datetime.timedelta(days=2, hours=15, minutes=50)),
-            ("student@usc.edu", "Thanksgiving Celebration: Circle of Gratitude", base_date + datetime.timedelta(days=3, hours=17), base_date + datetime.timedelta(days=3, hours=19, minutes=30)),
-            ("Work", "SWE Team Standup & Sprint Planning", base_date + datetime.timedelta(days=4, hours=11), base_date + datetime.timedelta(days=4, hours=12)),
+        recurring = self._expand_recurring_schedule(base_date.date(), base_date.date() + datetime.timedelta(days=14))
+        one_offs = [
+            {
+                "calendar": "linero@usc.edu",
+                "summary": "IRS visit - ITIN (appointment required)",
+                "location": "IRS Taxpayer Assistance Center",
+                "start_dt": base_date + datetime.timedelta(days=9, hours=9, minutes=45),
+                "end_dt": base_date + datetime.timedelta(days=9, hours=11, minutes=45),
+                "start_iso": (base_date + datetime.timedelta(days=9, hours=9, minutes=45)).isoformat(),
+                "end_iso": (base_date + datetime.timedelta(days=9, hours=11, minutes=45)).isoformat(),
+            }
         ]
-
-        events = []
-        for cal, summary, s_dt, e_dt in mock_items:
-            events.append({
-                "calendar": cal,
-                "summary": summary,
-                "start_iso": s_dt.isoformat(),
-                "end_iso": e_dt.isoformat(),
-                "start_dt": s_dt,
-                "end_dt": e_dt,
-            })
-        return events
+        all_evs = recurring + one_offs
+        all_evs.sort(key=lambda x: x["start_dt"])
+        return all_evs
 
     def evaluate_conflict(
         self,
