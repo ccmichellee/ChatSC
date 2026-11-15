@@ -109,8 +109,14 @@ def run_pipeline(
     # Step 1: Ingest fresh events
     crawled_count = 0
     if crawl:
-        logger.info("📡 Step 1: Starting campus events crawl...")
+        logger.info("📡 Step 1: Starting campus events crawl (USC Calendar + EngageSC + Handshake)...")
         crawled_count = crawl_events(days=days, max_pages=max_pages, store=store)
+        try:
+            from crawl_handshake_events import HANDSHAKE_SAMPLE_EVENTS, ingest_handshake_events
+            hs_count = ingest_handshake_events(HANDSHAKE_SAMPLE_EVENTS, store=store)
+            crawled_count += hs_count
+        except Exception as e:
+            logger.warning(f"Could not ingest Handshake events: {e}")
     else:
         logger.info("⏭️ Step 1: Skipping crawl as requested.")
 
