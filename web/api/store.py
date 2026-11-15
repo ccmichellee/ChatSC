@@ -1,6 +1,7 @@
 """Web-only adapters. The original MemoryStore and crawlers remain unchanged."""
 import json
 import re
+from pathlib import Path
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
@@ -160,4 +161,13 @@ class WebStore(MemoryStore):
                                description=r[3] or "", meeting_times=r[4] or "Meeting information not listed",
                                source_url=match.group(1) if match else "https://engage.usc.edu/club_signup",
                                sample_data=bool(r[5])))
-        return result
+        catalog_path = Path(__file__).resolve().parents[2] / "data" / "clubs.json"
+        catalog = json.loads(catalog_path.read_text())
+        def key(name):
+            return re.sub(r"[^a-z0-9]", "", re.sub(r"\busc\b", "", name.lower()))
+        names = {key(c["name"]) for c in catalog}
+        result = [c for c in result if key(c["name"]) not in names]
+        return [
+            {**club, "meeting_times": "Meeting information not listed", "sample_data": False}
+            for club in catalog
+        ] + result

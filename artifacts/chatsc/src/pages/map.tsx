@@ -1,11 +1,18 @@
 import { useDeferredValue, useEffect, useMemo, useState } from "react";
-import { MapContainer, Marker, TileLayer, Tooltip, useMap } from "react-leaflet";
+import { MapContainer, Marker, Popup, TileLayer, Tooltip, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { useGetEvents, useGetProfile, type CampusEvent } from "@workspace/api-client-react";
 import { EventCard, EventDialog, EventFilterBar } from "@/components/events-ui";
 import { CardSkeleton, ErrorState, PageHead } from "@/components/bits";
 import { emptyFilters, isConflict, toParams } from "@/lib/campus";
+import { KIND_COLOR, LANDMARKS, eventsAt, type Landmark } from "@/lib/campus-landmarks";
+
+const landmarkIcon = (l: Landmark) => L.divIcon({
+  className: "landmark-icon",
+  html: `<div class="landmark-pin"><span class="landmark-dot" style="background:${KIND_COLOR[l.kind]}"></span><span class="landmark-name">${l.short}</span></div>`,
+  iconSize: [0, 0], iconAnchor: [6, 6],
+});
 
 const CENTER: [number, number] = [34.0224, -118.2851];
 const pin = (active: boolean) => L.divIcon({
@@ -64,6 +71,26 @@ export default function MapPage() {
                 <Tooltip direction="top" offset={[0, -28]}>{e.title}</Tooltip>
               </Marker>
             ))}
+            {LANDMARKS.map((l) => { const here = eventsAt(l, events.data ?? []); return (
+              <Marker key={l.id} position={[l.lat, l.lng]} icon={landmarkIcon(l)} keyboard title={l.name} zIndexOffset={-500}>
+                <Popup className="landmark-popup" maxWidth={280}>
+                  <div data-testid={`popup-landmark-${l.id}`}>
+                    <p className="landmark-kind" style={{ color: KIND_COLOR[l.kind] }}>{l.kind}</p>
+                    <p className="landmark-title">{l.name}</p>
+                    <p className="landmark-blurb">{l.blurb}</p>
+                    {here.length > 0 ? (
+                      <div className="landmark-events">
+                        <p className="landmark-kind">Events here ({here.length})</p>
+                        {here.slice(0, 5).map((e) => (
+                          <button key={e.id} type="button" data-testid={`button-landmark-event-${e.id}`} onClick={() => { setSel(e.id); setOpen(e); }}>{e.title}</button>
+                        ))}
+                      </div>
+                    ) : <p className="landmark-none">No listed events here right now.</p>}
+                    <p className="landmark-note">Location approximate. <a href="https://www.usc.edu/campus-maps-pdf" target="_blank" rel="noreferrer" className="underline">Official USC campus map</a></p>
+                  </div>
+                </Popup>
+              </Marker>
+            ); })}
             <FlyTo ev={selected} />
           </MapContainer>
         </div>

@@ -1,1 +1,2 @@
 - [Calendar dependency compatibility](calendar-dependencies.md) — coordinate FullCalendar package upgrades; independent latest versions can be incompatible despite passing TypeScript.
+- [Campus photography](campus-imagery.md) — use authentic, properly licensed USC campus photography, not generated campus imagery.

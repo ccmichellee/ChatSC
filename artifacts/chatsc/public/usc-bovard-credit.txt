@@ -1,0 +1,8 @@
+USC Bovard Auditorium.jpg
+Photographer: Brion Vibber
+Source: https://commons.wikimedia.org/wiki/File:USC_Bovard_Auditorium.jpg
+Original: https://upload.wikimedia.org/wikipedia/commons/d/d0/USC_Bovard_Auditorium.jpg
+License chosen: Creative Commons Attribution-ShareAlike 3.0 Unported
+https://creativecommons.org/licenses/by-sa/3.0/
+Original image downloaded without pixel changes; CSS crops the display to fit.
+Any distributed adaptation of the photograph is available under CC BY-SA 3.0.

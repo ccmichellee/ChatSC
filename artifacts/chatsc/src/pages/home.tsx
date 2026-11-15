@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import { ArrowRight, RefreshCw } from "lucide-react";
@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { EventCard, EventDialog } from "@/components/events-ui";
 import { CardSkeleton, EmptyState, ErrorState } from "@/components/bits";
 import { isConflict, timeAgo } from "@/lib/campus";
+import { upcomingEvents } from "@/lib/upcoming-events";
 
 export default function Home() {
   const qc = useQueryClient();
@@ -19,12 +20,14 @@ export default function Home() {
   const refresh = useRefreshEvents();
   const [open, setOpen] = useState<CampusEvent | null>(null);
   const blocks = profile?.availability ?? [];
-
-  const next3 = useMemo(() => {
-    const now = Date.now();
-    return (events.data ?? []).filter((e) => e.start && new Date(e.start).getTime() >= now)
-      .sort((a, b) => new Date(a.start!).getTime() - new Date(b.start!).getTime()).slice(0, 3);
-  }, [events.data]);
+  const [now, setNow] = useState(Date.now);
+  useEffect(() => {
+    const tick = () => setNow(Date.now());
+    const timer = window.setInterval(tick, 30_000);
+    window.addEventListener("focus", tick);
+    return () => { window.clearInterval(timer); window.removeEventListener("focus", tick); };
+  }, []);
+  const next4 = useMemo(() => upcomingEvents(events.data ?? [], now), [events.data, now]);
 
   const doRefresh = () => refresh.mutate(undefined, {
     onSuccess: (r) => {
@@ -55,11 +58,15 @@ export default function Home() {
         </div>
         <div className="rise relative" style={{ animationDelay: "120ms" }}>
           <div className="absolute -inset-3 bg-accent rounded-[2.5rem] rotate-2" aria-hidden />
-          <img src={`${import.meta.env.BASE_URL}hero-campus.png`} alt="Illustrated campus quad with brick buildings, palm trees, and students" className="relative rounded-[2rem] w-full aspect-[4/3] object-cover border-4 border-card" />
+          <img src={`${import.meta.env.BASE_URL}usc-bovard.jpg`} alt="Real photograph of Bovard Auditorium at the University of Southern California" width={1536} height={1024} fetchPriority="high" className="relative rounded-[2rem] w-full aspect-[4/3] object-cover object-[50%_45%] border-4 border-card" />
           <div className="absolute -bottom-4 -left-3 bg-card rounded-2xl border border-card-border px-4 py-2 shadow-lg stamp">
             <p className="font-mono text-[10px] uppercase text-muted-foreground">Feed</p>
             <p className="text-sm font-semibold">{s ? timeAgo(s.last_updated) : "loading..."}</p>
           </div>
+          <p className="relative mt-6 text-[10px] text-muted-foreground text-right">
+            Photo: <a className="underline" href="https://commons.wikimedia.org/wiki/File:USC_Bovard_Auditorium.jpg" target="_blank" rel="noreferrer">Brion Vibber / Wikimedia Commons</a>
+            {" · "}<a className="underline" href="https://creativecommons.org/licenses/by-sa/3.0/" target="_blank" rel="noreferrer">CC BY-SA 3.0</a> · Cropped to fit
+          </p>
         </div>
       </section>
 
@@ -91,16 +98,16 @@ export default function Home() {
 
       <section className="max-w-6xl mx-auto px-4 mt-14">
         <div className="flex items-end justify-between gap-4 flex-wrap">
-          <div><p className="font-mono text-xs uppercase tracking-[0.2em] text-primary">Coming up</p><h2 className="font-display text-3xl font-extrabold mt-1">Next 3 events</h2></div>
+          <div><p className="font-mono text-xs uppercase tracking-[0.2em] text-primary">Coming up</p><h2 className="font-display text-3xl font-extrabold mt-1">Next 4 events</h2></div>
           <button onClick={doRefresh} disabled={refresh.isPending} data-testid="button-refresh" className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-4 py-2 text-sm font-semibold disabled:opacity-60">
             <RefreshCw size={14} className={refresh.isPending ? "animate-spin" : ""} />{refresh.isPending ? "Refreshing" : "Refresh feed"}
           </button>
         </div>
-        <div className="mt-6 grid md:grid-cols-[1.4fr_1fr] gap-4">
-          {events.isLoading && <CardSkeleton n={3} />}
+        <div className="mt-6 grid md:grid-cols-2 gap-4">
+          {events.isLoading && <CardSkeleton n={4} />}
           {events.isError && <ErrorState what="events" onRetry={() => events.refetch()} />}
-          {events.data && next3.length === 0 && <EmptyState title="Nothing scheduled ahead" body="No upcoming events with confirmed times right now. Check the full list or refresh the feed." action={<Link href="/events" className="text-primary font-semibold underline">See all events</Link>} />}
-          {next3.map((e, i) => <div key={e.id} className={i === 0 ? "md:row-span-2" : ""}><EventCard ev={e} conflict={isConflict(e, blocks)} onOpen={() => setOpen(e)} /></div>)}
+          {events.data && next4.length === 0 && <EmptyState title="Nothing scheduled ahead" body="No upcoming events with confirmed times right now. Check the full list or refresh the feed." action={<Link href="/events" className="text-primary font-semibold underline">See all events</Link>} />}
+          {next4.map((e) => <EventCard key={e.id} ev={e} conflict={isConflict(e, blocks)} onOpen={() => setOpen(e)} />)}
         </div>
       </section>
 

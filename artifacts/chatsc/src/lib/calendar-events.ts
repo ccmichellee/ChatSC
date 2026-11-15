@@ -44,3 +44,20 @@ function exclusiveDay(day: string) {
   date.setUTCDate(date.getUTCDate() + 1);
   return date.toISOString().slice(0, 10);
 }
+
+const MAX_DISPLAY_MS = 2.5 * 60 * 60 * 1000;
+
+// Long timed events keep their real times in extendedProps; only the drawn
+// block is capped so it doesn't swallow the whole evening column.
+export function displayWindow<T extends ReturnType<typeof calendarEvent>>(ev: T) {
+  if (ev.allDay || !ev.end) return { ...ev, extendedProps: { ...ev.extendedProps, capped: false } };
+  const s = new Date(ev.start).getTime();
+  const e = new Date(ev.end).getTime();
+  if (e - s <= MAX_DISPLAY_MS) return { ...ev, extendedProps: { ...ev.extendedProps, capped: false } };
+  return { ...ev, end: new Date(s + MAX_DISPLAY_MS).toISOString(), extendedProps: { ...ev.extendedProps, capped: true } };
+}
+
+export function fmtRange(start: string, end?: string | null) {
+  const f = (d: string) => new Date(d).toLocaleTimeString("en-US", { timeZone: TZ, hour: "numeric", minute: "2-digit" });
+  return end ? `${f(start)} – ${f(end)}` : f(start);
+}
