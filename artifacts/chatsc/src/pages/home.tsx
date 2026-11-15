@@ -54,21 +54,16 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="rise relative mx-1 mb-4 md:mx-3" style={{ animationDelay: "120ms" }}>
-            <div className="home-photo-frame relative">
-              <img src={`${import.meta.env.BASE_URL}usc-bovard.jpg`} alt="Bovard Auditorium on the University of Southern California campus" width={1536} height={1024} fetchPriority="high" className="relative aspect-[4/3] w-full rounded-[1.6rem] border-[5px] border-card object-cover object-[50%_45%] shadow-[0_24px_60px_-35px_hsl(0_35%_12%/.7)]" />
-              <div className="absolute left-4 top-4 rounded-full border border-card/80 bg-card/90 px-3 py-1.5 font-mono text-[10px] font-semibold uppercase tracking-[.14em] text-primary backdrop-blur-sm">
-                USC · Los Angeles
-              </div>
-              <div className="absolute -bottom-5 right-3 max-w-[250px] rounded-2xl border border-card-border bg-card px-4 py-3 shadow-xl sm:-right-5">
-                <p className="font-mono text-[10px] uppercase tracking-[.16em] text-muted-foreground">The ChatSC approach</p>
-                <p className="mt-1 font-display text-lg font-bold leading-snug">One campus. Your own shortlist.</p>
-              </div>
-            </div>
-            <p className="mt-8 text-right text-[10px] leading-4 text-muted-foreground">
-              Photo: <a className="underline underline-offset-2" href="https://commons.wikimedia.org/wiki/File:USC_Bovard_Auditorium.jpg" target="_blank" rel="noreferrer">Brion Vibber / Wikimedia Commons</a>
-              {" · "}<a className="underline underline-offset-2" href="https://creativecommons.org/licenses/by-sa/3.0/" target="_blank" rel="noreferrer">CC BY-SA 3.0</a>
-            </p>
+          <div className="rise mx-auto w-full max-w-[320px]" style={{ animationDelay: "120ms" }}>
+            <img
+              src={`${import.meta.env.BASE_URL}chatsc-text-example.png`}
+              alt="Example ChatSC text conversation recommending a performing arts event based on a student's interests, then sharing the date, time, and location."
+              width={1264}
+              height={2736}
+              fetchPriority="high"
+              data-testid="image-text-conversation"
+              className="h-auto w-full rounded-[2rem] shadow-[0_24px_60px_-25px_hsl(0_35%_12%/.45)]"
+            />
           </div>
         </div>
       </section>
