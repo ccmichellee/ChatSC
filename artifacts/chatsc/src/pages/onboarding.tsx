@@ -73,6 +73,7 @@ export default function Onboarding() {
   const [gmailConsent, setGmailConsent] = useState(false);
   const [importStatus, setImportStatus] = useState("");
   const [importing, setImporting] = useState(false);
+  const [basicsAttempted, setBasicsAttempted] = useState(false);
   const inited = useRef(false);
   useEffect(() => {
     const p = profile.data;
@@ -89,10 +90,20 @@ export default function Onboarding() {
     }
   }, [profile.data]);
 
+  const nameOk = Boolean(name.trim());
   const emailValue = email.trim().toLowerCase();
   const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailValue);
   const phoneOk = (profile.data?.onboarded && !phone.trim()) || validUsPhone(phone);
   const blocksOk = blockOverlaps(blocks).size === 0 && !blocks.some((b) => b.end <= b.start);
+  const goNext = () => {
+    if (step === 0 && (!nameOk || !emailOk || !phoneOk)) {
+      setBasicsAttempted(true);
+      const firstInvalid = !nameOk ? "name" : !emailOk ? "email" : "phone";
+      requestAnimationFrame(() => document.getElementById(firstInvalid)?.focus());
+      return;
+    }
+    setStep((current) => Math.min(3, current + 1));
+  };
   const toggle = (value: string[], setter: (items: string[]) => void, item: string) =>
     setter(value.includes(item) ? value.filter((x) => x !== item) : [...value, item]);
 
@@ -160,15 +171,22 @@ export default function Onboarding() {
       <div key={step} className="rise rounded-[2rem] bg-card border border-card-border p-5 sm:p-7 md:p-8">
         {step === 0 && <>
           <h2 className="font-display text-2xl font-extrabold">First, the basics.</h2>
-          <p className="text-muted-foreground mt-1">Your email and number are not verified yet. Verification is unavailable until a code sender is connected.</p>
-          <label className="block mt-5 text-sm font-semibold" htmlFor="name">First name</label>
-          <input id="name" value={name} onChange={(e) => setName(e.target.value)} maxLength={100} autoComplete="given-name" className={`${inp} mt-1`} placeholder="Your first name" data-testid="input-name" />
-          <label className="block mt-4 text-sm font-semibold" htmlFor="email">USC or preferred email</label>
-          <input id="email" type="email" autoComplete="email" inputMode="email" value={email} onChange={(e) => setEmail(e.target.value)} maxLength={254} className={`${inp} mt-1`} placeholder="you@example.com" aria-invalid={!!email && !emailOk} data-testid="input-email" />
+          <p className="text-muted-foreground mt-1">
+            {profile.data?.onboarded
+              ? "Enter your name and a valid email to continue. Leave mobile blank to keep your existing number."
+              : "Enter your name, a valid email, and a 10-digit U.S. mobile number to continue."} Verification isn’t available in this preview.
+          </p>
+          <label className="block mt-5 text-sm font-semibold" htmlFor="name">First name <span aria-hidden="true" className="text-primary">*</span></label>
+          <input id="name" required value={name} onChange={(e) => setName(e.target.value)} maxLength={100} autoComplete="given-name" className={`${inp} mt-1`} placeholder="Your first name" aria-invalid={basicsAttempted && !nameOk} aria-describedby={basicsAttempted && !nameOk ? "name-error" : undefined} data-testid="input-name" />
+          {basicsAttempted && !nameOk && <p id="name-error" role="alert" className="mt-1 text-xs text-destructive">Enter your first name to continue.</p>}
+          <label className="block mt-4 text-sm font-semibold" htmlFor="email">USC or preferred email <span aria-hidden="true" className="text-primary">*</span></label>
+          <input id="email" required type="email" autoComplete="email" inputMode="email" value={email} onChange={(e) => setEmail(e.target.value)} maxLength={254} className={`${inp} mt-1`} placeholder="you@example.com" aria-invalid={basicsAttempted && !emailOk} aria-describedby={basicsAttempted && !emailOk ? "email-error" : undefined} data-testid="input-email" />
           <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground"><Mail size={14} /> Email code verification isn't connected; this address remains unverified.</div>
-          <label className="block mt-4 text-sm font-semibold" htmlFor="phone">Mobile number</label>
-          <input id="phone" type="tel" inputMode="tel" autoComplete="tel" value={phone} onChange={(e) => setPhone(e.target.value)} className={`${inp} mt-1`} placeholder="(213) 555-0147" aria-invalid={!!phone && !validUsPhone(phone)} data-testid="input-phone" />
+          {basicsAttempted && !emailOk && <p id="email-error" role="alert" className="mt-1 text-xs text-destructive">Enter a valid email address to continue.</p>}
+          <label className="block mt-4 text-sm font-semibold" htmlFor="phone">Mobile number {!profile.data?.onboarded && <span aria-hidden="true" className="text-primary">*</span>}</label>
+          <input id="phone" required={!profile.data?.onboarded} type="tel" inputMode="tel" autoComplete="tel" value={phone} onChange={(e) => setPhone(e.target.value)} className={`${inp} mt-1`} placeholder="(213) 555-0147" aria-invalid={basicsAttempted && !phoneOk} aria-describedby={basicsAttempted && !phoneOk ? "phone-error" : undefined} data-testid="input-phone" />
           <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground"><Smartphone size={14} /> SMS verification isn't connected; this number remains unverified.</div>
+          {basicsAttempted && !phoneOk && <p id="phone-error" role="alert" className="mt-1 text-xs text-destructive">Enter a valid 10-digit U.S. mobile number to continue.</p>}
           <p className="text-xs text-muted-foreground mt-5">See <Link href="/privacy" className="underline text-primary">Privacy</Link> and <Link href="/terms" className="underline text-primary">Terms</Link>.</p>
         </>}
         {step === 1 && <>
@@ -237,8 +255,8 @@ export default function Onboarding() {
           <button type="button" onClick={() => setStep((s) => Math.max(0, s - 1))} disabled={step === 0}
             className="inline-flex items-center gap-1 min-h-12 rounded-full px-4 py-2 font-semibold disabled:invisible hover:bg-secondary" data-testid="button-back"><ArrowLeft size={16} />Back</button>
           {step < 3
-            ? <button type="button" onClick={() => setStep((s) => Math.min(3, s + 1))}
-                disabled={importing || (step === 0 && (!name.trim() || !emailOk || !phoneOk))}
+            ? <button type="button" onClick={goNext}
+                disabled={importing}
                 className="inline-flex items-center gap-2 min-h-12 rounded-full bg-primary text-primary-foreground px-6 py-2.5 font-semibold disabled:opacity-50" data-testid="button-next">Continue<ArrowRight size={16} /></button>
             : <button type="button" onClick={finish} disabled={save.isPending || !name.trim() || !emailOk || !phoneOk || !blocksOk}
                 className="inline-flex items-center gap-2 min-h-12 rounded-full bg-primary text-primary-foreground px-6 py-2.5 font-semibold disabled:opacity-50" data-testid="button-finish">{save.isPending ? "Saving…" : "Save and finish"}<Check size={16} /></button>}
