@@ -64,6 +64,23 @@ def cosine_sim(blob1: bytes, blob2: bytes) -> float:
     return dot / (norm1 * norm2)
 
 
+STOPWORDS = {
+    "what", "which", "who", "where", "when", "how", "do", "does", "did", "you", "your",
+    "i", "my", "we", "think", "should", "can", "could", "would", "like", "to", "join",
+    "recommend", "recommended", "recommendation", "recommendations", "club", "clubs",
+    "organization", "organizations", "student", "students", "usc", "trojan", "trojans",
+    "any", "some", "the", "a", "an", "in", "at", "for", "on", "of", "and", "or", "is", "are"
+}
+
+FLAGSHIP_TECH_CLUBS = [
+    ("CAIS++", "CAIS++ (Center for AI in Society Student Branch)", "AI / Social Impact", "USC's premier student AI research lab applying machine learning, NLP, and computer vision to healthcare, sustainability, and social impact projects. Weekly project labs and reading groups.", "Weekly project labs @ SAL 126"),
+    ("LavaLab", "LavaLab", "Entrepreneurship / Product", "USC's premier student-run product incubator. Each semester, cohorts of developers, designers, and PMs build and launch startup products, culminating in Demo Night to Silicon Beach VCs.", "Demo Day & cohort sessions @ Fertitta Hall"),
+    ("ACM at USC", "ACM at USC", "Computer Science / Engineering", "Association for Computing Machinery. USC's largest computing community hosting coding interview prep, technical workshops, hackathons, and systems tech talks.", "Weekly meetings @ OHE 122"),
+    ("TroyLabs", "TroyLabs", "Venture & Startups", "Student-run startup accelerator empowering Trojan founders with capital, mentorship, and connections to top Silicon Valley and Silicon Beach venture firms.", "Bi-weekly workshops @ JFF"),
+    ("AI Safety USC", "AI Safety USC", "AI Research / Safety", "Technical student research group focusing on frontier AI alignment, mechanistic interpretability, and robust evaluations for large foundation models.", "Weekly research seminars"),
+]
+
+
 class MemoryStore:
     def __init__(self, db_path: str = DB_PATH):
         self.db_path = db_path
@@ -299,27 +316,88 @@ class MemoryStore:
             conn.close()
 
     def search_clubs(self, query: str, top_k: int = 4) -> List[Dict[str, Any]]:
-        query_vec = compute_text_embedding(query)
+        """
+        Hybrid search for USC student clubs and organizations.
+        Combines semantic embedding similarity with keyword matching, stemming,
+        and domain relevance boosting for premier engineering/tech clubs.
+        """
+        q_clean = query.strip().lower()
+        raw_words = [w.strip("?,!.;:()") for w in q_clean.split()]
+        content_words = [w for w in raw_words if w and w not in STOPWORDS and len(w) >= 2]
+
+        # If query is purely generic (e.g. 'What clubs should I join?'), return top premier flagship clubs
+        if not content_words:
+            return [
+                {
+                    "name": name,
+                    "category": cat,
+                    "description": desc,
+                    "meeting_times": mt,
+                    "match_score": round(0.95 - (i * 0.05), 3)
+                }
+                for i, (short, name, cat, desc, mt) in enumerate(FLAGSHIP_TECH_CLUBS[:top_k])
+            ]
+
+        query_vec = compute_text_embedding(" ".join(content_words))
+
         conn = self.get_connection()
         try:
             cur = conn.cursor()
-            cur.execute('''
-            SELECT id, name, category, description, meeting_times,
-                   cosine_sim(embedding, ?) AS score
-            FROM campus_clubs
-            ORDER BY score DESC LIMIT ?
-            ''', (query_vec, top_k))
+            cur.execute("SELECT id, name, category, description, meeting_times, embedding FROM campus_clubs")
             rows = cur.fetchall()
-            return [
-                {
-                    "name": r[1],
-                    "category": r[2],
-                    "description": r[3],
-                    "meeting_times": r[4],
-                    "match_score": round(r[5], 3)
-                }
-                for r in rows
-            ]
+
+            scored = []
+            for r in rows:
+                cid, name, cat, desc, mt, emb = r
+                name_lower = name.lower()
+                desc_lower = (desc or "").lower()
+                cat_lower = (cat or "").lower()
+
+                # Base vector similarity
+                v_score = cosine_sim(query_vec, emb)
+                score = v_score
+
+                # Keyword matching with simple root stemming
+                for w in content_words:
+                    root = w[:-1] if w.endswith("s") and len(w) > 3 else w
+                    if root in name_lower:
+                        score += 0.5
+                    elif root in cat_lower:
+                        score += 0.3
+                    elif root in desc_lower:
+                        score += 0.15
+
+                # Boost premier tech/engineering organizations
+                if any(f.lower() in name_lower for f in ["cais++", "lavalab", "acm", "troylabs", "ai@usc", "ai safety"]):
+                    score += 0.25
+
+                # Demote irrelevant medical/dental/pharmacy clubs
+                irrelevant_terms = ["pharmacy", "pharmacists", "periodontics", "dental", "orthodontics", "neurological surgeons", "medical student"]
+                if any(term in name_lower or term in desc_lower for term in irrelevant_terms):
+                    score -= 0.6
+
+                scored.append((score, cid, name, cat, desc, mt))
+
+            scored.sort(key=lambda x: x[0], reverse=True)
+
+            seen = set()
+            results = []
+            for sc, cid, name, cat, desc, mt in scored:
+                norm_name = re.sub(r"\s*\(.*?\)", "", name).strip().lower()
+                if norm_name in seen:
+                    continue
+                seen.add(norm_name)
+                results.append({
+                    "name": name,
+                    "category": cat,
+                    "description": desc,
+                    "meeting_times": mt or "Check EngageSC for meeting times",
+                    "match_score": round(sc, 3)
+                })
+                if len(results) >= top_k:
+                    break
+
+            return results
         finally:
             conn.close()
 

@@ -32,13 +32,13 @@ TOOLS_SPEC = [
         "type": "function",
         "function": {
             "name": "search_campus_clubs",
-            "description": "Searches registered USC student organizations, tech clubs, incubators, and project teams.",
+            "description": "Searches registered USC student organizations, premier tech clubs (CAIS++, LavaLab, ACM at USC, TroyLabs, AI Safety), incubators, and project teams. Call this whenever the user asks about clubs, what to join, or recommendations.",
             "parameters": {
                 "type": "object",
                 "properties": {
                     "query": {
                         "type": "string",
-                        "description": "Club keyword, domain, or category, e.g. 'AI', 'robotics', 'startups', 'consulting'"
+                        "description": "Club keyword, domain, category, or 'general clubs', e.g. 'AI', 'startups', 'coding', 'incubators'"
                     }
                 },
                 "required": ["query"]
