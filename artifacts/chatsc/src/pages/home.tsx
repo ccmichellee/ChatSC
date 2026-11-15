@@ -54,7 +54,7 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="rise mx-auto w-full max-w-[320px]" style={{ animationDelay: "120ms" }}>
+          <div className="rise mx-auto w-full max-w-[440px]" style={{ animationDelay: "120ms" }}>
             <img
               src={`${import.meta.env.BASE_URL}chatsc-phone-example.png`}
               alt="Example ChatSC text conversation recommending a performing arts event based on a student's interests, then sharing the date, time, and location."
@@ -69,30 +69,29 @@ export default function Home() {
       </section>
 
       <section className="mx-auto mt-8 max-w-7xl px-5 sm:mt-12 sm:px-8 lg:px-12" aria-label="How personalized text recommendations work" data-testid="section-text-recommendations">
-        <div className="grid overflow-hidden rounded-[2rem] border border-card-border bg-card md:grid-cols-[.8fr_1.2fr]">
-          <div className="relative overflow-hidden bg-foreground p-7 text-background sm:p-9">
+        <div className="min-w-0 overflow-hidden rounded-[2rem] border border-card-border bg-card">
+          <div className="relative min-w-0 bg-foreground p-6 text-background sm:p-9">
             <div className="home-rule absolute left-0 right-0 top-0 h-1" aria-hidden />
-            <p className="font-mono text-[10px] uppercase tracking-[.2em] text-accent">A useful kind of AI</p>
-            <h2 className="mt-4 max-w-sm font-display text-3xl font-extrabold leading-tight sm:text-4xl">Personalized recommendations, by text.</h2>
-            <p className="mt-4 max-w-sm text-sm leading-6 text-background/75">Sign up on the website and share what matters to you. ChatSC turns campus listings into relevant opportunities matched to your interests, goals, and schedule.</p>
+            <p className="font-mono text-[10px] uppercase tracking-[.2em] text-accent">How it works</p>
+            <h2 className="mt-4 max-w-3xl break-words font-display text-2xl font-extrabold leading-tight sm:text-4xl" data-testid="heading-text-recommendations">Personalized recommendations, by text.</h2>
+            <p className="mt-4 max-w-2xl text-sm leading-6 text-background/75">Less searching. More opportunities that fit. Here’s how ChatSC turns scattered campus information into your next step.</p>
             <Link href={profile?.onboarded ? "/demo" : "/onboarding"} className="mt-7 inline-flex items-center gap-2 rounded-full bg-accent px-5 py-3 text-sm font-bold text-accent-foreground transition-transform hover:-translate-y-0.5">
               {profile?.onboarded ? "Preview a sample text" : "Start Onboarding"} <ArrowRight size={16} />
             </Link>
-            <div className="absolute -bottom-14 -right-10 h-44 w-44 rounded-full border border-background/15" aria-hidden />
-            <div className="absolute -bottom-7 -right-3 h-28 w-28 rounded-full border border-background/15" aria-hidden />
           </div>
-          <div className="home-index grid gap-0 p-6 sm:grid-cols-3 sm:p-8">
+          <ol className="grid min-w-0 gap-6 p-6 md:grid-cols-3 sm:p-9" aria-label="Steps to get personalized recommendations">
             {[
-              ["Tell it what matters", "Add interests, goals, and the time you have available."],
-              ["Get a focused shortlist", "Relevant events and recommendations are gathered from the campus listings."],
-              ["Make your next move", "Open the source, plan your week, or explore what’s nearby."],
-            ].map(([title, detail]) => (
-              <div key={title} className="home-step border-b border-border py-5 first:pt-1 last:border-b-0 sm:border-b-0 sm:border-l sm:px-5 sm:first:border-l-0 sm:first:pl-0 sm:last:pr-0">
-                <h3 className="mt-3 font-display text-xl font-bold leading-tight">{title}</h3>
+              ["Sign up on the website", "Start onboarding with your name, email, and mobile number. No need to text a keyword to get started."],
+              ["Tell us what matters", "Share your interests and goals, add your schedule, and choose how often you want recommendations."],
+              ["Get personalized texts", "ChatSC matches campus events, clubs, and opportunities to you, with the details and next steps you need to act."],
+            ].map(([title, detail], index) => (
+              <li key={title} className="min-w-0 border-b border-border pb-6 last:border-b-0 last:pb-0 md:border-b-0 md:pb-0" data-testid={`how-it-works-step-${index + 1}`}>
+                <span aria-hidden="true" className="grid h-10 w-10 place-items-center rounded-full bg-accent text-sm font-bold text-accent-foreground">{index + 1}</span>
+                <h3 className="mt-4 font-display text-lg font-bold leading-tight">{title}</h3>
                 <p className="mt-2 text-sm leading-6 text-muted-foreground">{detail}</p>
-              </div>
+              </li>
             ))}
-          </div>
+          </ol>
         </div>
       </section>
 
