@@ -92,6 +92,20 @@ RECURRING_WEEKLY_SCHEDULE = [
     }
 ]
 
+# Official USC Campus Academic Calendar Holidays (University Closed / No Classes)
+CAMPUS_HOLIDAYS = {
+    datetime.date(2026, 11, 26): {
+        "title": "Thanksgiving Day (Campus Holiday Break - No Classes)",
+        "location": "USC Campus Closed",
+        "note": "Thursday, Nov 26 is Thanksgiving Day! Campus is closed and classes are off."
+    },
+    datetime.date(2026, 11, 27): {
+        "title": "Thanksgiving Break / Black Friday (Campus Holiday - No Classes)",
+        "location": "USC Campus Closed",
+        "note": "Friday, Nov 27 is Thanksgiving Break / Black Friday (USC campus closed)."
+    },
+}
+
 
 def get_pst_offset() -> datetime.timedelta:
     """Calculates offset between local system time and USC Pacific Time (PST, UTC-8)."""
@@ -314,6 +328,40 @@ end tell
         semester_end = datetime.date(2026, 12, 12)
 
         while current <= min(end_date, semester_end):
+            # Check for official USC campus holidays (Thanksgiving break, etc.)
+            if current in CAMPUS_HOLIDAYS:
+                hol = CAMPUS_HOLIDAYS[current]
+                recurring_events.append({
+                    "calendar": "USC Holidays",
+                    "summary": hol["title"],
+                    "location": hol["location"],
+                    "start_dt": datetime.datetime(current.year, current.month, current.day, 0, 0, 0),
+                    "end_dt": datetime.datetime(current.year, current.month, current.day, 23, 59, 59),
+                    "start_iso": datetime.datetime(current.year, current.month, current.day, 0, 0, 0).isoformat(),
+                    "end_iso": datetime.datetime(current.year, current.month, current.day, 23, 59, 59).isoformat(),
+                    "is_holiday": True,
+                    "holiday_note": hol.get("note", "Campus closed for university holiday break.")
+                })
+                # On university holidays, normal USC classes (CSCI 402, 572, 591) are canceled!
+                # Only keep external work sessions (like Impatico) if scheduled
+                weekday = current.weekday()
+                for item in RECURRING_WEEKLY_SCHEDULE:
+                    if item.get("calendar") == "Work" and item["day"] == weekday:
+                        sh, sm = item["start_time"]
+                        eh, em = item["end_time"]
+                        recurring_events.append({
+                            "calendar": item.get("calendar", "Work"),
+                            "summary": item["title"],
+                            "location": item.get("location", ""),
+                            "start_iso": datetime.datetime(current.year, current.month, current.day, sh, sm, 0).isoformat(),
+                            "end_iso": datetime.datetime(current.year, current.month, current.day, eh, em, 0).isoformat(),
+                            "start_dt": datetime.datetime(current.year, current.month, current.day, sh, sm, 0),
+                            "end_dt": datetime.datetime(current.year, current.month, current.day, eh, em, 0),
+                            "is_recurring": True,
+                        })
+                current += datetime.timedelta(days=1)
+                continue
+
             weekday = current.weekday()
             for item in RECURRING_WEEKLY_SCHEDULE:
                 if item["day"] == weekday:
@@ -403,6 +451,15 @@ end tell
                     overlap_start = max(s_start, ev_start)
                     overlap_end = min(s_end, ev_end)
                     if overlap_start < overlap_end:
+                        if s_ev.get("is_holiday"):
+                            return {
+                                "status": "conflict",
+                                "has_conflict": True,
+                                "conflicting_event": s_ev["summary"],
+                                "conflicting_details": s_ev.get("holiday_note", f"{s_ev['summary']} (Campus closed)"),
+                                "busy_same_day": busy_same_day,
+                                "note": s_ev.get("holiday_note", f"Campus Holiday: {s_ev['summary']}")
+                            }
                         return {
                             "status": "conflict",
                             "has_conflict": True,
