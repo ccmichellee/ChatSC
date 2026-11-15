@@ -1,15 +1,17 @@
 import json
 from typing import Dict, Any, List
 from student_memory import MemoryStore
+from calendar_reader import MacCalendarReader
 
 store = MemoryStore()
+cal_reader = MacCalendarReader()
 
 TOOLS_SPEC = [
     {
         "type": "function",
         "function": {
             "name": "search_campus_events",
-            "description": "Searches for live USC campus events, workshops, hackathons, and speaker talks by topic or keyword.",
+            "description": "Searches for live USC campus events, workshops, hackathons, and speaker talks by topic or keyword. Automatically evaluates student calendar availability for returned events.",
             "parameters": {
                 "type": "object",
                 "properties": {
@@ -46,6 +48,23 @@ TOOLS_SPEC = [
     {
         "type": "function",
         "function": {
+            "name": "check_student_calendar",
+            "description": "Checks the student's personal macOS calendar for upcoming classes, appointments, busy blocks, and free time.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "days_ahead": {
+                        "type": "integer",
+                        "description": "Number of days ahead to inspect (default: 14)."
+                    }
+                },
+                "required": []
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "get_student_profile",
             "description": "Fetches the current student's background, courses, major, and known interests from memory.",
             "parameters": {
@@ -65,7 +84,26 @@ def execute_tool(name: str, arguments: Dict[str, Any], current_user: str) -> str
             query = arguments.get("query", "")
             free_food_only = bool(arguments.get("free_food_only", False))
             events = store.search_events(query, free_food_only=free_food_only, top_k=3)
+
+            # Check student calendar availability for each event
+            student_cals = cal_reader.get_upcoming_events(days_ahead=30)
+            for ev in events:
+                sched = cal_reader.evaluate_conflict(ev.get("date", ""), student_cals)
+                ev["schedule_status"] = sched["status"]
+                ev["schedule_availability"] = sched.get("conflicting_details") or sched.get("note")
+
             return json.dumps({"events": events}, indent=2)
+
+        elif name == "check_student_calendar":
+            days = arguments.get("days_ahead", 14)
+            cal_events = cal_reader.get_upcoming_events(days_ahead=days)
+            summary_list = [
+                f"{e['summary']} on {e['start_dt'].strftime('%A, %b %-d from %-I:%M %p')} to {e['end_dt'].strftime('%-I:%M %p')}"
+                for e in cal_events
+            ]
+            return json.dumps({
+                "calendar_events": summary_list if summary_list else f"Calendar is completely clear for the next {days} days."
+            }, indent=2)
 
         elif name == "search_campus_clubs":
             query = arguments.get("query", "")
