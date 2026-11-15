@@ -15,13 +15,13 @@ export function ClassBlockEditor({ blocks, onChange }: { blocks: ClassBlock[]; o
         return (
           <div key={i} className={`rounded-2xl border p-3 bg-card grid grid-cols-2 sm:grid-cols-[1.3fr_1fr_1fr_1.6fr_auto] gap-2 items-center ${overlaps.has(i) || invalid ? "border-destructive/60" : "border-card-border"}`} data-testid={`row-class-${i}`}>
             <label className="sr-only" htmlFor={`d${i}`}>Day</label>
-            <select id={`d${i}`} value={b.day} onChange={(e) => upd(i, { day: Number(e.target.value) })} className={inp}>
+            <select id={`d${i}`} value={b.day} onChange={(e) => upd(i, { day: Number(e.target.value) })} className={inp} data-testid={`select-class-day-${i}`}>
               {DAYS_LONG.map((d, k) => <option key={d} value={k}>{d}</option>)}
             </select>
-            <input aria-label="Start time" type="time" value={b.start} onChange={(e) => upd(i, { start: e.target.value })} className={inp} />
-            <input aria-label="End time" type="time" value={b.end} onChange={(e) => upd(i, { end: e.target.value })} className={inp} />
-            <input aria-label="Class title" value={b.title} placeholder="e.g. WRIT 150" onChange={(e) => upd(i, { title: e.target.value })} className={inp} />
-            <button type="button" aria-label={`Remove ${b.title || "class block"}`} onClick={() => onChange(blocks.filter((_, j) => j !== i))} className="h-9 w-9 grid place-items-center rounded-xl hover:bg-destructive/10 text-destructive justify-self-end"><Trash2 size={16} /></button>
+            <input aria-label="Start time" type="time" value={b.start} onChange={(e) => upd(i, { start: e.target.value })} className={inp} data-testid={`input-class-start-${i}`} />
+            <input aria-label="End time" type="time" value={b.end} onChange={(e) => upd(i, { end: e.target.value })} className={inp} data-testid={`input-class-end-${i}`} />
+            <input aria-label="Class title" value={b.title} placeholder="e.g. WRIT 150" onChange={(e) => upd(i, { title: e.target.value })} className={inp} data-testid={`input-class-title-${i}`} />
+            <button type="button" aria-label={`Remove ${b.title || "class block"}`} onClick={() => onChange(blocks.filter((_, j) => j !== i))} className="h-9 w-9 grid place-items-center rounded-xl hover:bg-destructive/10 text-destructive justify-self-end" data-testid={`button-remove-class-${i}`}><Trash2 size={16} /></button>
             {(overlaps.has(i) || invalid) && <p className="col-span-full text-xs text-destructive flex items-center gap-1"><AlertTriangle size={12} />{invalid ? "End time must be after start." : "Overlaps another class block."}</p>}
           </div>
         );
