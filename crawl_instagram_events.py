@@ -280,7 +280,7 @@ def diagnose_instagram_setup(
     print(f"✅ Access Token present (starts with {access_token[:10]}...)")
     print(f"ℹ️ Currently configured INSTAGRAM_ACCOUNT_ID: {account_id or '(none)'}\n")
 
-    # 1. Query /me
+    # 1. Query /me and permissions
     is_page_token = False
     try:
         url = f"{GRAPH_API_BASE}/{GRAPH_API_VERSION}/me?fields=id,name,instagram_business_account{{id,username}}&access_token={access_token}"
@@ -296,10 +296,24 @@ def diagnose_instagram_setup(
             ig_id = ig_biz.get("id")
             ig_user = ig_biz.get("username")
             print(f"   👉 Connected Instagram Business Account: @{ig_user} (ID: {ig_id})")
-            print(f"   🎯 FIX: Run the following in your terminal:")
-            print(f"      export INSTAGRAM_ACCOUNT_ID=\"{ig_id}\"\n")
-            print("=" * 65 + "\n")
-            return
+            print(f"   🎯 Exported: export INSTAGRAM_ACCOUNT_ID=\"{ig_id}\"\n")
+
+            # Test Business Discovery on own account
+            try:
+                test_fields = f"business_discovery.username({ig_user}){{username,name,media_count}}"
+                test_url = f"{GRAPH_API_BASE}/{GRAPH_API_VERSION}/{ig_id}?fields={urllib.parse.quote(test_fields)}&access_token={access_token}"
+                req = urllib.request.Request(test_url, headers={"Accept": "application/json"})
+                with urllib.request.urlopen(req, timeout=10) as resp:
+                    test_resp = json.loads(resp.read().decode("utf-8"))
+                biz_test = test_resp.get("business_discovery", {})
+                print(f"   ✅ Self-test on your own account (@{ig_user}) SUCCEEDED!")
+                print(f"      (Profile confirmed: {biz_test.get('name') or ig_user}, media count: {biz_test.get('media_count')})")
+                print("   ℹ️ This proves your Instagram Professional Account and Business Discovery API endpoint work perfectly.")
+            except urllib.error.HTTPError as e:
+                err_body = e.read().decode("utf-8", errors="ignore")
+                print(f"   ⚠️ Self-test on @{ig_user} returned HTTP {e.code}: {err_body}")
+            except Exception as e:
+                print(f"   ⚠️ Self-test error: {e}")
         else:
             print("   ℹ️ This token belongs to Facebook Page / Entity: " + str(entity_name))
             is_page_token = True
@@ -311,6 +325,21 @@ def diagnose_instagram_setup(
         print(f"❌ Network error querying /me: {e}")
         print("=" * 65 + "\n")
         return
+
+    # Check token scopes / permissions
+    try:
+        perm_url = f"{GRAPH_API_BASE}/{GRAPH_API_VERSION}/me/permissions?access_token={access_token}"
+        req = urllib.request.Request(perm_url, headers={"Accept": "application/json"})
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            perm_data = json.loads(resp.read().decode("utf-8"))
+        granted = [p["permission"] for p in perm_data.get("data", []) if p.get("status") == "granted"]
+        print(f"🔑 Granted Permissions ({len(granted)}): {', '.join(granted)}")
+        for req_p in ["instagram_basic", "instagram_manage_insights", "pages_read_engagement"]:
+            if req_p not in granted:
+                print(f"   ⚠️ Missing recommended permission: '{req_p}'")
+        print("")
+    except Exception as e:
+        logger.debug(f"Could not fetch permissions: {e}")
 
     # 2. If it's a User token, query /me/accounts (Facebook Pages)
     if not is_page_token:
