@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "wouter";
 import { ArrowRight, ArrowUpRight, BriefcaseBusiness, CalendarDays, Compass, MapPinned, Sparkles, UsersRound } from "lucide-react";
-import { useGetProfile, useGetRecommendations, useGetSummary, getGetRecommendationsQueryKey, type CampusEvent } from "@workspace/api-client-react";
+import { useGetProfile, useGetRecommendations, getGetRecommendationsQueryKey, type CampusEvent } from "@workspace/api-client-react";
 import { EventCard, EventDialog } from "@/components/events-ui";
 import { CardSkeleton, ErrorState } from "@/components/bits";
 import { isConflict } from "@/lib/campus";
@@ -9,16 +9,14 @@ import { isConflict } from "@/lib/campus";
 export default function Home() {
   const { data: profile } = useGetProfile();
   const user = profile?.onboarded ? profile.user : "";
-  const summary = useGetSummary();
   const recs = useGetRecommendations({ user }, { query: { enabled: !!user, queryKey: getGetRecommendationsQueryKey({ user }) } });
   const [open, setOpen] = useState<CampusEvent | null>(null);
   const blocks = profile?.availability ?? [];
 
-  const s = summary.data;
   const browse = [
-    { title: "Campus events", detail: "Talks, gatherings, and things happening soon.", href: "/events", icon: CalendarDays, count: s?.events },
-    { title: "Student clubs", detail: "Find communities built around what you care about.", href: "/clubs", icon: UsersRound, count: s?.clubs },
-    { title: "Opportunities", detail: "Explore internships, programs, and next steps.", href: "/opportunities", icon: BriefcaseBusiness, count: s?.opportunities },
+    { title: "Campus events", detail: "Talks, gatherings, and things happening soon.", href: "/events", icon: CalendarDays, action: "Browse events", style: "bg-foreground text-background" },
+    { title: "Student clubs", detail: "Find communities built around what you care about.", href: "/clubs", icon: UsersRound, action: "Discover communities", style: "bg-accent text-accent-foreground" },
+    { title: "Opportunities", detail: "Explore internships, programs, and next steps.", href: "/opportunities", icon: BriefcaseBusiness, action: "Explore opportunities", style: "bg-primary text-primary-foreground" },
   ];
 
   return (
@@ -96,19 +94,16 @@ export default function Home() {
       </section>
 
       <section className="mx-auto mt-10 max-w-7xl px-5 sm:px-8 lg:px-12" aria-label="Browse campus listings">
-        <div className="grid grid-cols-1 divide-y divide-border rounded-2xl border border-border bg-card px-5 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
-          {browse.map(({ title, detail, href, icon: Icon, count }) => (
-            <Link key={title} href={href} className="group flex items-center gap-4 py-5 sm:px-5 sm:first:pl-0 sm:last:pr-0" data-testid={`browse-${title.toLowerCase().replaceAll(" ", "-")}`}>
-              <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-accent/50 text-primary transition-colors group-hover:bg-accent"><Icon size={21} /></span>
-              <span className="min-w-0 flex-1">
-                <span className="flex items-center gap-2 font-display text-lg font-bold">{title}<ArrowUpRight size={15} className="shrink-0 text-primary transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" /></span>
-                <span className="mt-0.5 block text-sm leading-5 text-muted-foreground">{detail}</span>
-              </span>
-              <span className="font-mono text-sm text-muted-foreground">{summary.isLoading ? "…" : count ?? "–"}</span>
+        <div className="grid gap-4 md:grid-cols-3">
+          {browse.map(({ title, detail, href, icon: Icon, action, style }) => (
+            <Link key={title} href={href} className={`group flex min-h-[250px] min-w-0 flex-col rounded-[1.8rem] p-7 transition-transform hover:-translate-y-1 sm:p-8 ${style}`} data-testid={`browse-${title.toLowerCase().replaceAll(" ", "-")}`}>
+              <Icon size={24} aria-hidden="true" />
+              <h2 className="mt-7 font-display text-2xl font-extrabold leading-tight">{title}</h2>
+              <p className="mb-6 mt-2 text-sm leading-6 opacity-80">{detail}</p>
+              <span className="mt-auto inline-flex items-center gap-2 text-sm font-bold">{action}<ArrowRight size={16} aria-hidden="true" className="transition-transform group-hover:translate-x-1" /></span>
             </Link>
           ))}
         </div>
-        {s?.sample_data && <p className="mt-2 text-[10px] text-muted-foreground">Some listings are sample data and marked accordingly.</p>}
       </section>
 
       {user && (
