@@ -107,6 +107,11 @@ def main():
         default="🤖 ",
         help="Prefix added to bot messages (prevents loopbacks and identifies the bot)."
     )
+    parser.add_argument(
+        "--proactive",
+        action="store_true",
+        help="Proactively dispatch an autonomous opening text to the whitelisted user on startup."
+    )
     args = parser.parse_args()
 
     whitelist: List[str] = [normalize_contact(w) for w in args.whitelist.split(",") if w.strip()]
@@ -155,6 +160,50 @@ def main():
 
     signal.signal(signal.SIGINT, handle_shutdown)
     signal.signal(signal.SIGTERM, handle_shutdown)
+
+    # Optional: Autonomous proactive opening text
+    if args.proactive and whitelist:
+        target_student = whitelist[0]
+        logger.info(f"⚡ Proactive mode active! Triggering autonomous opening outreach to {target_student}...")
+        try:
+            from pipeline_events import generate_proactive_outreach
+            from student_memory import MemoryStore
+            from calendar_reader import MacCalendarReader
+
+            p_store = MemoryStore()
+            p_profile = p_store.get_student_profile(target_student)
+            if not p_profile:
+                all_st = p_store.list_all_students()
+                if all_st:
+                    p_profile = p_store.get_student_profile(all_st[0]["phone_or_email"])
+
+            # Prefer high-impact Handshake career events (Meta / Google tech talk) for the demo
+            unnotified = p_store.get_unnotified_events_for_student(target_student, min_similarity=0.35, limit=2)
+            has_handshake = any("handshake" in [t.lower() for t in ev.get("tags", [])] for ev in unnotified)
+            if not has_handshake:
+                hs_events = p_store.search_events("Handshake Meta Google tech talk", top_k=2)
+                if hs_events:
+                    unnotified = hs_events
+
+            if unnotified and p_profile and llama.is_configured():
+                cal_reader = MacCalendarReader()
+                student_cals = cal_reader.get_upcoming_events(days_ahead=14)
+                for ev in unnotified:
+                    date_field = ev.get("date") or ev.get("date_str", "")
+                    s_eval = cal_reader.evaluate_conflict(date_field, student_cals)
+                    ev["schedule_status"] = s_eval["status"]
+                    ev["has_schedule_conflict"] = s_eval["has_conflict"]
+                    ev["conflicting_event"] = s_eval.get("conflicting_event")
+                    ev["schedule_note"] = s_eval.get("conflicting_details") or s_eval.get("note")
+
+                proactive_text = generate_proactive_outreach(llama, p_profile, unnotified, target_student)
+                logger.info(f"📤 Dispatching proactive opening text: \"{proactive_text}\"")
+                send_message(target_student, proactive_text, dry_run=args.dry_run)
+                for ev in unnotified:
+                    if "id" in ev:
+                        p_store.record_recommendation(target_student, ev["id"])
+        except Exception as e:
+            logger.warning(f"Could not trigger proactive opening outreach: {e}")
 
     current_rowid = latest_rowid
 
