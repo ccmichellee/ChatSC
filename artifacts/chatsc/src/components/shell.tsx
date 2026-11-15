@@ -20,7 +20,7 @@ export function Shell({ children }: { children: ReactNode }) {
         <div className="max-w-6xl mx-auto px-4 h-14 flex items-center gap-3">
           <Link href="/" className="flex items-center gap-2 shrink-0" data-testid="link-logo">
             <span className="grid place-items-center w-8 h-8 rounded-xl bg-primary text-primary-foreground font-display font-extrabold">C</span>
-            <span className="font-display text-xl font-extrabold tracking-tight">Chat<span className="text-primary">SC</span></span>
+            <span className="font-display text-xl font-extrabold tracking-tight text-[#990000]">Chat<span className="text-[#FFCC00]">SC</span></span>
           </Link>
           <nav aria-label="Primary" className="hidden md:flex items-center gap-1 ml-6">
             {links.map((l) => <NavLink key={l.href} {...l} active={loc === l.href} />)}
@@ -37,7 +37,7 @@ export function Shell({ children }: { children: ReactNode }) {
       <main id="main" className="min-w-0 flex-1">{children}</main>
       <footer className="border-t border-border mt-16">
         <div className="max-w-6xl mx-auto px-4 py-8 text-sm text-muted-foreground flex flex-col md:flex-row gap-2 justify-between">
-          <p><span className="font-display font-bold text-foreground">ChatSC</span> is an independent student guide, not an official USC service.</p>
+          <p><span className="font-display font-bold text-[#990000]">Chat<span className="text-[#FFCC00]">SC</span></span> is an independent student guide, not an official USC service.</p>
           <p className="flex gap-4"><Link href="/privacy" className="underline" data-testid="link-privacy">Privacy (draft)</Link><Link href="/terms" className="underline" data-testid="link-terms">Terms (draft)</Link></p>
           <p className="font-mono text-xs">All times shown in Los Angeles time. Items marked Sample are fictional.</p>
         </div>
