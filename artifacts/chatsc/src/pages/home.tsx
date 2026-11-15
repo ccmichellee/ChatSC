@@ -15,7 +15,7 @@ export default function Home() {
 
   const browse = [
     { title: "Campus events", detail: "Talks, gatherings, and things happening soon.", href: "/events", icon: CalendarDays, action: "Browse events", style: "bg-foreground text-background" },
-    { title: "Student clubs", detail: "Find communities built around what you care about.", href: "/clubs", icon: UsersRound, action: "Discover communities", style: "bg-accent text-accent-foreground" },
+    { title: "Student clubs & campus resources", detail: "Find student communities and campus resources that fit your needs.", href: "/clubs", icon: UsersRound, action: "Discover clubs & resources", style: "bg-accent text-accent-foreground" },
     { title: "Opportunities", detail: "Explore internships, programs, and next steps.", href: "/opportunities", icon: BriefcaseBusiness, action: "Explore opportunities", style: "bg-primary text-primary-foreground" },
   ];
 
