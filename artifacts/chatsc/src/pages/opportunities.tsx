@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Building2, CalendarClock, Info, MapPin } from "lucide-react";
+import { Building2, CalendarClock, MapPin } from "lucide-react";
 import { useGetOpportunities, type Opportunity } from "@workspace/api-client-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { CardSkeleton, EmptyState, ErrorState, PageHead, SampleBadge, Tag } from "@/components/bits";
@@ -18,9 +18,7 @@ export default function Opportunities() {
   const now = Date.now();
   return (
     <div className="max-w-6xl mx-auto px-4">
-      <PageHead kicker="Opportunities" title="Jobs, research, and things worth applying to">
-        <span className="inline-flex items-center gap-2 rounded-2xl bg-accent/30 px-3 py-2 text-sm text-foreground"><Info size={15} />These listings are fictional sample data for demo purposes.</span>
-      </PageHead>
+      <PageHead kicker="Opportunities" title="Jobs, research, and things worth applying to" />
       <div className="flex flex-wrap gap-2" aria-label="Type filter">
         <Tag active={!type} onClick={() => setType("")}>All types</Tag>
         {types.map((t) => <Tag key={t} active={type === t} onClick={() => setType(type === t ? "" : t)}>{t}</Tag>)}
