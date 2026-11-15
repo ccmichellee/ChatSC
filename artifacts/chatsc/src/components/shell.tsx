@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { Link, useLocation } from "wouter";
+import { AccessibilityWidget } from "@/components/accessibility-widget";
 
 const links = [
   { href: "/", label: "Home" },
@@ -41,6 +42,7 @@ export function Shell({ children }: { children: ReactNode }) {
           <p className="font-mono text-xs">All times shown in Los Angeles time. Items marked Sample are fictional.</p>
         </div>
       </footer>
+      <AccessibilityWidget />
     </div>
   );
 }

@@ -498,6 +498,159 @@ body::after { content:''; position:fixed; inset:0; pointer-events:none; z-index:
 .chatsc-cal .fc .fc-popover .fc-event { margin: 2px 0; }
 .chatsc-cal .fc .fc-popover .cal-ev-title { -webkit-line-clamp: 3; }
 
+/* ---- Sitewide accessibility display preferences ---- */
+.a11y-widget {
+  position: fixed;
+  right: calc(1rem + env(safe-area-inset-right));
+  bottom: calc(1rem + env(safe-area-inset-bottom));
+  z-index: 80;
+}
+
+.a11y-widget-trigger {
+  min-height: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .5rem;
+  padding: .7rem 1rem;
+  border: 2px solid hsl(var(--primary-foreground));
+  border-radius: 999px;
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  box-shadow: 0 4px 18px rgba(25, 10, 10, .2);
+  font: 700 .875rem/1 var(--app-font-sans);
+}
+
+.a11y-widget-trigger:hover,
+.a11y-widget-choice:hover,
+.a11y-widget-icon-button:hover,
+.a11y-widget-reset:hover {
+  filter: brightness(.94);
+}
+
+.a11y-widget-panel {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + .75rem);
+  width: min(24rem, calc(100vw - 2rem));
+  max-height: min(70dvh, 34rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 1rem;
+  border: 1px solid hsl(var(--border));
+  border-radius: 1.25rem;
+  background: hsl(var(--card));
+  color: hsl(var(--card-foreground));
+  box-shadow: 0 12px 40px rgba(25, 10, 10, .22);
+}
+
+.a11y-widget-panel[hidden] {
+  display: none;
+}
+
+.a11y-widget-choice,
+.a11y-widget-icon-button,
+.a11y-widget-reset {
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .4rem;
+  border: 1px solid hsl(var(--border));
+  border-radius: .75rem;
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font: 600 .8125rem/1.2 var(--app-font-sans);
+}
+
+.a11y-widget-choice {
+  padding: .5rem;
+}
+
+.a11y-widget-choice[aria-pressed="true"] {
+  border-color: hsl(var(--primary));
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+}
+
+.a11y-widget-icon-button {
+  width: 40px;
+  flex: none;
+}
+
+.a11y-widget-toggle {
+  display: flex;
+  align-items: center;
+  gap: .65rem;
+  font-size: .875rem;
+  line-height: 1.4;
+  cursor: pointer;
+}
+
+.a11y-widget-toggle input {
+  width: 1.1rem;
+  height: 1.1rem;
+  flex: none;
+  accent-color: hsl(var(--primary));
+}
+
+.a11y-widget-reset {
+  width: 100%;
+  padding: .55rem .75rem;
+}
+
+:root[data-a11y-text-size="large"] { font-size: 112.5%; }
+:root[data-a11y-text-size="largest"] { font-size: 125%; }
+
+:root[data-a11y-high-contrast="true"] {
+  --background: 0 0% 100%;
+  --foreground: 0 0% 0%;
+  --border: 0 0% 18%;
+  --card: 0 0% 100%;
+  --card-foreground: 0 0% 0%;
+  --card-border: 0 0% 18%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 0 0% 0%;
+  --popover-border: 0 0% 18%;
+  --sidebar: 0 0% 97%;
+  --sidebar-foreground: 0 0% 0%;
+  --sidebar-border: 0 0% 18%;
+  --primary: 0 100% 24%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 0 0% 91%;
+  --secondary-foreground: 0 0% 0%;
+  --muted: 0 0% 93%;
+  --muted-foreground: 0 0% 15%;
+  --accent: 52 100% 55%;
+  --accent-foreground: 0 0% 0%;
+  --input: 0 0% 20%;
+  --ring: 0 0% 0%;
+}
+
+:root[data-a11y-high-contrast="true"] body::after {
+  display: none;
+}
+
+:root[data-a11y-high-contrast="true"] :focus-visible {
+  outline-color: #005fcc;
+  outline-width: 3px;
+}
+
+:root[data-a11y-underline-links="true"] a {
+  text-decoration: underline !important;
+  text-underline-offset: .16em;
+}
+
+:root[data-a11y-reduce-motion="true"],
+:root[data-a11y-reduce-motion="true"] *,
+:root[data-a11y-reduce-motion="true"] *::before,
+:root[data-a11y-reduce-motion="true"] *::after {
+  scroll-behavior: auto !important;
+  animation-duration: .01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: .01ms !important;
+}
+
 /* ---- ChatSC discovery home ---- */
 .home-hero {
   background:
