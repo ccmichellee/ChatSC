@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
 import { Link, useLocation } from "wouter";
-import { useGetProfile } from "@workspace/api-client-react";
 
 const links = [
   { href: "/", label: "Home" },
@@ -13,7 +12,6 @@ const links = [
 
 export function Shell({ children }: { children: ReactNode }) {
   const [loc] = useLocation();
-  const { data: profile } = useGetProfile();
   return (
     <div className="min-h-[100dvh] flex flex-col">
       <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[60] bg-accent text-accent-foreground px-4 py-2 rounded-full font-semibold">Skip to content</a>
@@ -26,9 +24,9 @@ export function Shell({ children }: { children: ReactNode }) {
           <nav aria-label="Primary" className="hidden md:flex items-center gap-1 ml-6">
             {links.map((l) => <NavLink key={l.href} {...l} active={loc === l.href} />)}
           </nav>
-          <Link href="/onboarding" data-testid="link-onboarding"
+          <Link href="/onboarding" data-testid="link-onboard"
             className="ml-auto rounded-full px-4 py-1.5 text-sm font-semibold bg-primary text-primary-foreground hover:-translate-y-0.5 transition-transform">
-            {profile?.onboarded ? "Preferences" : "Get started"}
+            Onboard
           </Link>
         </div>
         <nav aria-label="Primary mobile" className="md:hidden flex gap-1 overflow-x-auto no-scrollbar px-3 pb-2">
@@ -36,7 +34,7 @@ export function Shell({ children }: { children: ReactNode }) {
         </nav>
       </header>
       <main id="main" className="flex-1">{children}</main>
-      <footer className="border-t border-border mt-16 pb-20 md:pb-0">
+      <footer className="border-t border-border mt-16">
         <div className="max-w-6xl mx-auto px-4 py-8 text-sm text-muted-foreground flex flex-col md:flex-row gap-2 justify-between">
           <p><span className="font-display font-bold text-foreground">ChatSC</span> is an independent student guide, not an official USC service.</p>
           <p className="flex gap-4"><Link href="/privacy" className="underline" data-testid="link-privacy">Privacy (draft)</Link><Link href="/terms" className="underline" data-testid="link-terms">Terms (draft)</Link></p>

@@ -497,3 +497,41 @@ body::after { content:''; position:fixed; inset:0; pointer-events:none; z-index:
 .landmark-popup .landmark-none, .landmark-popup .landmark-note { margin: 4px 0 0; font-size: 11px; color: #7a6f6a; }
 .chatsc-cal .fc .fc-popover .fc-event { margin: 2px 0; }
 .chatsc-cal .fc .fc-popover .cal-ev-title { -webkit-line-clamp: 3; }
+
+/* ---- ChatSC discovery home ---- */
+.home-hero {
+  background:
+    radial-gradient(ellipse at 82% 18%, hsl(48 100% 50% / .18), transparent 32%),
+    linear-gradient(135deg, hsl(48 35% 96%), hsl(45 27% 90%));
+}
+.home-photo-frame { isolation: isolate; }
+.home-photo-frame::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 1.1rem -1rem -1rem 1.1rem;
+  border-radius: 2rem;
+  background: hsl(var(--primary));
+  transform: rotate(2deg);
+}
+.home-photo-frame::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 1.6rem;
+  border: 1px solid hsl(48 40% 97% / .65);
+  pointer-events: none;
+}
+.home-index { counter-reset: home-step; }
+.home-step::before {
+  counter-increment: home-step;
+  content: "0" counter(home-step);
+  font: 600 .72rem/1 var(--app-font-mono);
+  color: hsl(var(--primary));
+  letter-spacing: .12em;
+}
+.home-rule { background: linear-gradient(90deg, hsl(var(--primary)), hsl(var(--accent)), transparent); }
+@media (prefers-reduced-motion: reduce) {
+  .rise { animation: none; }
+  html { scroll-behavior: auto; }
+}

@@ -260,25 +260,35 @@ components:
         title: { type: string }
     StudentInput:
       type: object
-      required: [phone, consent, interests, availability, frequency]
+      required: [phone, interests, availability, frequency]
       properties:
         phone: { type: string }
-        consent: { type: boolean }
+        email: { type: string, maxLength: 254 }
+        consent: { type: boolean, default: false }
         interests: { type: array, items: { type: string } }
+        goals: { type: array, maxItems: 30, items: { type: string, maxLength: 100 } }
+        notes: { type: string, maxLength: 1000 }
+        gmail_consent: { type: boolean }
         availability: { type: array, items: { $ref: "#/components/schemas/ClassBlock" } }
         frequency: { type: string, enum: [daily, weekly, twice-weekly] }
         name: { type: string }
     StudentProfile:
       type: object
-      required: [user, onboarded, consent, interests, availability, frequency, name]
+      required: [user, onboarded, consent, interests, availability, frequency, name, email, goals, notes, email_verified, phone_verified, gmail_consent]
       properties:
         user: { type: string }
         onboarded: { type: boolean }
         consent: { type: boolean }
         interests: { type: array, items: { type: string } }
+        goals: { type: array, items: { type: string } }
+        notes: { type: string }
         availability: { type: array, items: { $ref: "#/components/schemas/ClassBlock" } }
         frequency: { type: string }
         name: { type: string }
+        email: { type: string }
+        email_verified: { type: boolean }
+        phone_verified: { type: boolean }
+        gmail_consent: { type: boolean }
     RefreshStatus:
       type: object
       required: [status, count, message, sample_data]

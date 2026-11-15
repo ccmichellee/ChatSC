@@ -3,6 +3,11 @@ import type { CampusEvent, ClassBlock, GetEventsParams } from "@workspace/api-cl
 export const TZ = "America/Los_Angeles";
 export const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 export const DAYS_LONG = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+export function laDateKey(date = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-US", { timeZone: TZ, year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(date);
+  const get = (type: string) => parts.find((part) => part.type === type)?.value ?? "";
+  return `${get("year")}-${get("month")}-${get("day")}`;
+}
 
 export type EventFilters = { q: string; tag: string; from: string; to: string; free_food: boolean };
 export const emptyFilters: EventFilters = { q: "", tag: "", from: "", to: "", free_food: false };

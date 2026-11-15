@@ -11,7 +11,13 @@ export interface StudentProfile {
   onboarded: boolean;
   consent: boolean;
   interests: string[];
+  goals: string[];
+  notes: string;
   availability: ClassBlock[];
   frequency: string;
   name: string;
+  email: string;
+  email_verified: boolean;
+  phone_verified: boolean;
+  gmail_consent: boolean;
 }

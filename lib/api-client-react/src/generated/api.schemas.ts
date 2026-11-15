@@ -143,8 +143,18 @@ export const StudentInputFrequency = {
 
 export interface StudentInput {
   phone: string;
-  consent: boolean;
+  /** @maxLength 254 */
+  email?: string;
+  consent?: boolean;
   interests: string[];
+  /**
+     * @maxItems 30
+     * @items.maxLength 100
+     */
+  goals?: string[];
+  /** @maxLength 1000 */
+  notes?: string;
+  gmail_consent?: boolean;
   availability: ClassBlock[];
   frequency: StudentInputFrequency;
   name?: string;
@@ -155,9 +165,15 @@ export interface StudentProfile {
   onboarded: boolean;
   consent: boolean;
   interests: string[];
+  goals: string[];
+  notes: string;
   availability: ClassBlock[];
   frequency: string;
   name: string;
+  email: string;
+  email_verified: boolean;
+  phone_verified: boolean;
+  gmail_consent: boolean;
 }
 
 export interface RefreshStatus {

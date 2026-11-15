@@ -152,6 +152,15 @@ export const GetOpportunitiesResponseItem = zod.object({
 export const GetOpportunitiesResponse = zod.array(GetOpportunitiesResponseItem)
 
 
+export const saveOnboardingBodyEmailMax = 254;
+
+export const saveOnboardingBodyConsentDefault = false;
+export const saveOnboardingBodyGoalsItemMax = 100;
+
+export const saveOnboardingBodyGoalsMax = 30;
+
+export const saveOnboardingBodyNotesMax = 1000;
+
 export const saveOnboardingBodyAvailabilityItemDayMin = 0;
 export const saveOnboardingBodyAvailabilityItemDayMax = 6;
 
@@ -159,8 +168,12 @@ export const saveOnboardingBodyAvailabilityItemDayMax = 6;
 
 export const SaveOnboardingBody = zod.object({
   "phone": zod.string(),
-  "consent": zod.boolean(),
+  "email": zod.string().max(saveOnboardingBodyEmailMax).optional(),
+  "consent": zod.boolean().default(saveOnboardingBodyConsentDefault),
   "interests": zod.array(zod.string()),
+  "goals": zod.array(zod.string().max(saveOnboardingBodyGoalsItemMax)).max(saveOnboardingBodyGoalsMax).optional(),
+  "notes": zod.string().max(saveOnboardingBodyNotesMax).optional(),
+  "gmail_consent": zod.boolean().optional(),
   "availability": zod.array(zod.object({
   "day": zod.number().int().min(saveOnboardingBodyAvailabilityItemDayMin).max(saveOnboardingBodyAvailabilityItemDayMax).describe('0=Monday, 6=Sunday'),
   "start": zod.string(),
@@ -181,6 +194,8 @@ export const SaveOnboardingResponse = zod.object({
   "onboarded": zod.boolean(),
   "consent": zod.boolean(),
   "interests": zod.array(zod.string()),
+  "goals": zod.array(zod.string()),
+  "notes": zod.string(),
   "availability": zod.array(zod.object({
   "day": zod.number().int().min(saveOnboardingResponseAvailabilityItemDayMin).max(saveOnboardingResponseAvailabilityItemDayMax).describe('0=Monday, 6=Sunday'),
   "start": zod.string(),
@@ -188,7 +203,11 @@ export const SaveOnboardingResponse = zod.object({
   "title": zod.string()
 })),
   "frequency": zod.string(),
-  "name": zod.string()
+  "name": zod.string(),
+  "email": zod.string(),
+  "email_verified": zod.boolean(),
+  "phone_verified": zod.boolean(),
+  "gmail_consent": zod.boolean()
 })
 
 
@@ -202,6 +221,8 @@ export const GetProfileResponse = zod.object({
   "onboarded": zod.boolean(),
   "consent": zod.boolean(),
   "interests": zod.array(zod.string()),
+  "goals": zod.array(zod.string()),
+  "notes": zod.string(),
   "availability": zod.array(zod.object({
   "day": zod.number().int().min(getProfileResponseAvailabilityItemDayMin).max(getProfileResponseAvailabilityItemDayMax).describe('0=Monday, 6=Sunday'),
   "start": zod.string(),
@@ -209,7 +230,11 @@ export const GetProfileResponse = zod.object({
   "title": zod.string()
 })),
   "frequency": zod.string(),
-  "name": zod.string()
+  "name": zod.string(),
+  "email": zod.string(),
+  "email_verified": zod.boolean(),
+  "phone_verified": zod.boolean(),
+  "gmail_consent": zod.boolean()
 })
 
 

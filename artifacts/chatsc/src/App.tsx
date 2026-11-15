@@ -14,7 +14,6 @@ import Clubs from '@/pages/clubs';
 import Opportunities from '@/pages/opportunities';
 import Onboarding from '@/pages/onboarding';
 import { PrivacyPage, TermsPage } from '@/pages/legal';
-import { TojiProvider } from '@/components/toji';
 
 const queryClient = new QueryClient({ defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } } });
 
@@ -49,9 +48,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
-          <TojiProvider>
-            <Router />
-          </TojiProvider>
+          <Router />
         </WouterRouter>
         <Toaster />
       </TooltipProvider>

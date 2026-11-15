@@ -1,16 +1,18 @@
 ---
-name: Toji integration boundaries
-description: Product constraints for the Toji signup and web-chat integration
+name: ChatSC recommendation agent
+description: Product positioning and safety boundaries for the student recommendation agent
 ---
 
-Toji recommends USC clubs, events, and opportunities over iMessage and website chat.
-The website should collect consented signups and connect to the existing Python
-agent, rather than rebuilding the AI, search tools, or message delivery.
+ChatSC's core product turns scattered USC events, clubs, internships, and
+opportunities into personalized, actionable recommendations, primarily delivered
+by an AI agent over text. The website is the onboarding and discovery interface.
+Do not use the retired Toji brand or position ChatSC mainly as a between-classes
+guide.
 
-**Why:** The user explicitly requested reusing the existing agent and a configurable
-backend connection, with honest placeholder replies until it is connected.
+**Why:** The user clarified that the AI texting agent is the main product and the
+website is its interface. Text delivery is not currently connected in the preview.
 
 **How to apply:** Keep messaging delivery and shared conversation memory in the
-existing bot. Do not treat a visitor typing a phone number as verification or
-permission to reveal an existing profile. Preserve explicit consent records and
-make unconnected messaging/AI states clear.
+existing Python agent. Never imply messages are being sent until delivery is
+connected. Do not treat a typed phone number as verification or permission to
+reveal a profile; preserve explicit messaging consent before enabling texts.

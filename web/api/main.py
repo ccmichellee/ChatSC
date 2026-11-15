@@ -64,11 +64,37 @@ class ClassBlock(BaseModel):
 
 class StudentInput(BaseModel):
     phone: str
-    consent: bool
+    consent: bool = False
     interests: list[str] = Field(max_length=30)
+    email: str = Field(default="", max_length=254)
+    goals: list[str] = Field(default_factory=list, max_length=30)
+    notes: str = Field(default="", max_length=1000)
+    gmail_consent: bool = False
     availability: list[ClassBlock] = Field(max_length=40)
     frequency: Literal["daily", "weekly", "twice-weekly"]
     name: str = Field(default="Trojan", max_length=100)
+
+    @field_validator("name")
+    @classmethod
+    def valid_name(cls, value):
+        if not value.strip():
+            raise ValueError("Enter your first name.")
+        return value.strip()
+
+    @field_validator("email")
+    @classmethod
+    def valid_email(cls, value):
+        value = value.strip().lower()
+        if value and not re.fullmatch(r"[^@\s]{1,64}@[^@\s.]{1,190}(?:\.[^@\s.]{1,63})+", value):
+            raise ValueError("Enter a valid email address.")
+        return value
+
+    @field_validator("goals")
+    @classmethod
+    def valid_goals(cls, values):
+        if any(not value.strip() or len(value) > 100 for value in values):
+            raise ValueError("Each goal must be between 1 and 100 characters.")
+        return list(dict.fromkeys(value.strip() for value in values))
 
 
 def session_user(request):
@@ -87,8 +113,12 @@ def profile_for(user):
         except ValueError:
             pass
     return dict(user=user or "", onboarded=bool(profile), name=profile.get("name", "Trojan") if profile else "Trojan",
-                consent=extra.get("consent", False), interests=profile.get("interests", []) if profile else [],
-                availability=extra.get("availability", []), frequency=extra.get("frequency", "weekly"))
+                consent=extra.get("consent", False), interests=extra.get("interests", profile.get("interests", []) if profile else []),
+                availability=extra.get("availability", []), frequency=extra.get("frequency", "weekly"),
+                email=extra.get("email", ""), goals=extra.get("goals", []), notes=extra.get("notes", ""),
+                email_verified=bool(extra.get("email_verified", False)),
+                phone_verified=bool(extra.get("phone_verified", False)),
+                gmail_consent=bool(extra.get("gmail_consent", False)))
 
 
 @app.get("/api/healthz")
@@ -104,19 +134,34 @@ def profile(request: Request):
 @app.post("/api/onboarding")
 def onboarding(data: StudentInput, request: Request, response: Response):
     user = session_user(request)
-    phone = re.sub(r"\D", "", data.phone)
+    if not re.fullmatch(r"[0-9\s()+.\-]*", data.phone):
+        raise HTTPException(422, "Enter a valid US phone number.")
+    phone = re.sub(r"[^0-9]", "", data.phone)
+    email = data.email
     if user and not phone:
         previous = store.get_student_profile(user)
         try:
-            phone = json.loads(previous.get("raw_summary") or "{}").get("phone", "")
+            previous_extra = json.loads(previous.get("raw_summary") or "{}")
+            phone = previous_extra.get("phone", "")
         except (ValueError, AttributeError):
+            previous_extra = {}
             phone = ""
+    else:
+        previous = store.get_student_profile(user) if user else None
+        try:
+            previous_extra = json.loads(previous.get("raw_summary") or "{}") if previous else {}
+        except (ValueError, AttributeError):
+            previous_extra = {}
+    if user and not email:
+        email = previous_extra.get("email", "")
     if len(phone) not in (10, 11) or (len(phone) == 11 and not phone.startswith("1")):
         raise HTTPException(422, "Enter a valid US phone number.")
-    if not data.consent:
-        raise HTTPException(422, "Consent is required to save text preferences. No texts are sent by this demo.")
-    if not data.interests or any(not i.strip() or len(i) > 100 for i in data.interests):
-        raise HTTPException(422, "Choose at least one interest.")
+    if len(phone) == 10:
+        phone = "1" + phone
+    if phone[1] not in "23456789" or phone[4] not in "23456789":
+        raise HTTPException(422, "Enter a valid US phone number.")
+    if any(not i.strip() or len(i) > 100 for i in data.interests):
+        raise HTTPException(422, "Interests must be between 1 and 100 characters.")
     if any(b.end <= b.start for b in data.availability):
         raise HTTPException(422, "Class blocks must end after they start.")
     if not user:
@@ -126,8 +171,20 @@ def onboarding(data: StudentInput, request: Request, response: Response):
             conn.execute("INSERT INTO web_sessions VALUES (?,?)", (token, user))
         response.set_cookie("chatsc_session", token, httponly=True, samesite="strict", max_age=60 * 60 * 24 * 365,
                             secure=request.headers.get("x-forwarded-proto") == "https")
+    previous_email = previous_extra.get("email", "")
+    email_verified = bool(previous_extra.get("email_verified")) if email and email == previous_email else False
+    # No OTP provider or Gmail OAuth is configured in this workspace. Never infer
+    # that a typed email/phone is verified or that mailbox access was granted.
+    phone_verified = bool(previous_extra.get("phone_verified")) if phone == previous_extra.get("phone") else False
+    all_interests = list(dict.fromkeys([
+        *data.interests, *data.goals,
+        *([data.notes] if data.notes else []),
+    ]))
     store.save_student_profile(user, dict(name=data.name, major="", school="USC", year="",
-        interests=data.interests, courses=[], raw_summary=json.dumps(dict(phone=phone, consent=data.consent,
+        interests=all_interests, courses=[], raw_summary=json.dumps(dict(phone=phone, consent=data.consent,
+        email=email, email_verified=email_verified, phone_verified=phone_verified,
+        interests=data.interests, goals=data.goals, notes=data.notes,
+        gmail_consent=data.gmail_consent,
         availability=[b.model_dump() for b in data.availability], frequency=data.frequency))))
     return profile_for(user)
 
