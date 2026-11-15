@@ -114,6 +114,18 @@
   - Multi-Source Aggregation: Unified with official USC Calendar API in `crawl_usc_events.py`.
   - Ingestion Result: 131 EngageSC club events + 267 USC Calendar events = 398 total campus events indexed into `memory.db`.
 
+## Decision 12: Instagram Club Events Ingestion via Meta Business Discovery API
+
+- **Date**: 2026-11-15
+- **Decision**: Ingest campus club events from Instagram via Meta Graph API (Business Discovery) and Muse Ember LLM extraction.
+- **Approved by User**: Selected "(Recommended) Official Meta Graph API (Business Discovery)".
+- **Specification**:
+  - **API Endpoint**: `GET https://graph.facebook.com/v21.0/{ig_user_id}?fields=business_discovery.username({handle}){media{caption,media_url,timestamp,permalink,media_type}}`
+  - **Authentication**: `INSTAGRAM_ACCESS_TOKEN` and `INSTAGRAM_ACCOUNT_ID` injected via environment variables.
+  - **Club Targets**: Target list of USC student organizations / club handles (e.g. `hackscofficial`, `ai.usc`, `caisplusplus`, `usc_acm`, `usclavalab`, etc.).
+  - **LLM Extraction**: Post captions are evaluated by `muse-ember-1.0` to determine if a post announces an upcoming event and extract structured fields: `title`, `description`, `date_str`, `location`, `tags`, `has_free_food`, and `rsvp_url` (or permalink).
+  - **Database Integration**: Validated events are stored in `memory.db`'s `campus_events` table with generated vector embeddings, feeding directly into Tommy's proactive recommendation pipeline.
+
 
 
 

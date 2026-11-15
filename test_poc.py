@@ -128,6 +128,48 @@ class TestIMessagePOC(unittest.TestCase):
         self.assertIn("Cowlings and Ilium Residential Colleges", res["tags"])
         self.assertIn("https://engage.usc.edu/rsvp_boot?id=415720", res["description"])
 
+    def test_instagram_event_heuristic_extraction(self):
+        from crawl_instagram_events import extract_event_from_caption_heuristic
+
+        # Test valid event caption
+        event_caption = (
+            "⚡️ HACKSC 2026 KICKOFF! ⚡️\n"
+            "Join us this Friday at 6:00 PM in Ginsburg Hall for kickoff and free Sweetgreen dinner! 🥗\n"
+            "RSVP link in bio!"
+        )
+        res = extract_event_from_caption_heuristic(
+            caption=event_caption,
+            timestamp_str="2026-11-20T18:00:00Z",
+            permalink="https://instagram.com/p/test1/",
+            club_handle="hackscofficial"
+        )
+        self.assertIsNotNone(res)
+        self.assertIn("hackscofficial", res["title"])
+        self.assertEqual(res["location"], "Ginsburg Hall")
+        self.assertTrue(res["has_free_food"])
+        self.assertIn("Instagram", res["tags"])
+        self.assertIn("@hackscofficial", res["tags"])
+        self.assertIn("Hackathon", res["tags"])
+
+        # Test non-event post (recap/throwback)
+        non_event_caption = "Throwback to our team retreat last weekend! Had so much fun bonding. ✌️❤️"
+        res_non = extract_event_from_caption_heuristic(
+            caption=non_event_caption,
+            timestamp_str="2026-11-20T18:00:00Z",
+            permalink="https://instagram.com/p/test2/",
+            club_handle="hackscofficial"
+        )
+        self.assertIsNone(res_non)
+
+    def test_instagram_crawl_mock(self):
+        from crawl_instagram_events import crawl_instagram_events
+        count = crawl_instagram_events(
+            clubs=["hackscofficial", "caisplusplus"],
+            mock=True,
+            dry_run=True
+        )
+        self.assertEqual(count, 2)
+
 
 if __name__ == "__main__":
     unittest.main()

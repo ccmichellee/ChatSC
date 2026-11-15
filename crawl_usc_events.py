@@ -245,20 +245,38 @@ def crawl_engagesc_events(limit: int = 50, max_pages: int = 4, store: Optional[M
     return indexed
 
 
-def crawl_events(days: int = 60, max_pages: int = 3, store: Optional[MemoryStore] = None) -> int:
+def crawl_events(
+    days: int = 60,
+    max_pages: int = 3,
+    store: Optional[MemoryStore] = None,
+    include_instagram: bool = True
+) -> int:
     """
-    Crawls both official USC Calendar and EngageSC events, saving all records into memory.db.
+    Crawls official USC Calendar, EngageSC, and Instagram campus club events,
+    saving all records into memory.db.
     Returns the total count of events processed.
     """
     if store is None:
         store = MemoryStore()
 
-    logger.info("🚀 Starting Multi-Source Campus Events Crawl (USC Calendar + EngageSC)...")
+    logger.info("🚀 Starting Multi-Source Campus Events Crawl (Calendar + EngageSC + Instagram)...")
     cal_count = crawl_calendar_events(days=days, max_pages=max_pages, store=store)
     engage_count = crawl_engagesc_events(limit=50, max_pages=max_pages, store=store)
-    total = cal_count + engage_count
 
-    logger.info(f"🎉 Multi-Source Crawl Finished: {total} total events indexed ({cal_count} Calendar, {engage_count} EngageSC).")
+    ig_count = 0
+    if include_instagram:
+        try:
+            from crawl_instagram_events import crawl_instagram_events
+            ig_count = crawl_instagram_events(store=store)
+        except Exception as e:
+            logger.warning(f"Instagram crawl skipped or encountered an issue: {e}")
+
+    total = cal_count + engage_count + ig_count
+
+    logger.info(
+        f"🎉 Multi-Source Crawl Finished: {total} total events indexed "
+        f"({cal_count} Calendar, {engage_count} EngageSC, {ig_count} Instagram)."
+    )
     return total
 
 

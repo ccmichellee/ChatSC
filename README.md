@@ -111,7 +111,7 @@ The system includes an automated event pipeline (`pipeline_events.py`) that craw
 [Cron / Schedule Trigger]
            │
            ▼
-[crawl_usc_events.py] ──(Crawls calendar.usc.edu + engage.usc.edu)──► [memory.db: campus_events]
+[crawl_usc_events.py] ──(Calendar + EngageSC + Instagram)──► [memory.db: campus_events]
                                                               │
                                                       (Vector & Signal Match)
                                                               ▼
@@ -151,6 +151,19 @@ Add the following line (replace with your absolute Python and repo paths):
 ```cron
 0 9 * * * cd /path/to/ChatSC && python3 pipeline_events.py >> /path/to/ChatSC/pipeline.log 2>&1
 ```
+
+### 4. Ingesting Campus Club Events from Instagram
+The system supports ingesting events from public USC club Instagram business accounts (`crawl_instagram_events.py`) via Meta's Graph API Business Discovery:
+```bash
+# Test run with mock Instagram club posts
+python3 crawl_instagram_events.py --mock --dry-run
+
+# Run live with Meta Graph API credentials
+export INSTAGRAM_ACCOUNT_ID="your_ig_business_account_id"
+export INSTAGRAM_ACCESS_TOKEN="your_meta_access_token"
+python3 crawl_instagram_events.py --clubs "hackscofficial,caisplusplus,usclavalab,usc_acm"
+```
+*When configured, `pipeline_events.py` automatically incorporates Instagram club feeds into its multi-source crawl cycle.*
 
 ### Anti-Spam Gating Policy:
 - **Deduplication**: Recommended events are stored in `sent_recommendations (phone_or_email, event_id)` and are strictly never re-sent.
