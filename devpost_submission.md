@@ -14,7 +14,7 @@
 
 ---
 
-## Architecture & Tech Stack
+## How We Built It
 
 ```
                       ┌───────────────────────────────────────────────┐
@@ -51,32 +51,10 @@
     • Sent dedup tracking      • Academic holidays
 ```
 
-### 1. Zero-Install Interface: Native macOS iMessage Bridge
-- **Ingestion (`imessage_reader.py`)**: Interrogates `~/Library/Messages/chat.db` in read-only URI mode (`file:...mode=ro`) to eliminate database locks. Decodes macOS Sonoma+ binary `NSAttributedString` typedstream blobs in real time.
-- **Dispatch (`imessage_sender.py`)**: Uses targeted AppleScript compilation via `osascript` to deliver conversational bubbles back to the student's iPhone.
-- **Privacy & Isolation Guardrails**: A multi-tiered filter strictly rejects non-whitelisted senders, automated 2FA shortcodes, and group chats (`any;+;`), preventing cross-chat leaks.
+We built ChatSC as a zero-install, privacy-first personal agent running locally on macOS:
 
-### 2. Agent Core: Meta Muse Ember & Autonomous Tool Loop
-- **Model**: `muse-ember-1.0` (Meta Muse Ember), selected for low-latency reasoning and strict privacy compliance (zero retention for model retraining).
-- **Autonomous Execution Loop (`llm_client.py`)**: Implements an agentic function-calling loop. When a student texts Tommy, the model inspects memory context, invokes custom tools (`search_campus_events`, `search_campus_clubs`, `check_student_calendar`), evaluates returns, and synthesizes concise, 1–3 sentence texts with Trojan personality.
-- **Proactive Wake-Up (`pipeline_events.py`)**: Runs autonomously on schedule triggers. Instead of waiting for queries, Tommy scouts fresh events, checks student calendar openings, and sends proactive outreach texts before opportunities pass.
-
-### 3. Embedded Vector Database & Hybrid Search Engine
-- **Storage (`student_memory.py`)**: A zero-dependency, self-contained embedded SQLite vector store (`memory.db`).
-- **Semantic Embeddings**: Uses deterministic sub-word n-gram hashing and token frequency with L2 unit normalization.
-- **In-Database Vector Similarity**: Registers a custom C-level cosine similarity function directly into the SQLite connection (`cosine_sim(embedding, ?)`), allowing real-time vector ranking directly inside SQL queries.
-- **Hybrid Ranking**: Blends semantic similarity with BM25 keyword root matching, Viterbi engineering boosts, and conversational stopword pruning so tech students get premier clubs (**CAIS++**, **LavaLab**, **ACM**, **TroyLabs**) rather than generic campus clubs.
-- **Anti-Spam Dedup**: Tracks sent recommendations in a relational `sent_recommendations` table to prevent repeat notifications.
-
-### 4. Real-Time Schedule Intelligence & Conflict Engine
-- **macOS Calendar Sync (`calendar_reader.py`)**: Bridges directly to macOS `Calendar.app` via AppleScript, reading student class schedules and personal appointments without requiring external OAuth credentials.
-- **Recurrence Series Expansion**: Solves a core AppleScript limitation (where recurring event series are hidden by initial start dates) by expanding recurring course schedules (`CSCI 402`, `CSCI 591`, `CSCI 572`) dynamically across the target window.
-- **Timezone Normalization**: Automatically calculates system offsets and normalizes all events into Los Angeles Pacific Time (PST / UTC-8).
-- **Academic Holiday Engine**: Built-in awareness of official USC academic calendar breaks (e.g., Thanksgiving Break, Black Friday campus closures) to suppress non-existent class conflicts.
-- **Interval Overlap Resolver**: Executes mathematical interval collision checking (`max(start1, start2) < min(end1, end2)`) to give students instant heads-ups when talks overlap with class.
-
-### 5. Multi-Source Campus Event Aggregation
-- **Handshake Pipeline (`crawl_handshake_events.py`)**: Ingests employer tech talks (Google, Meta, AWS, Citadel) and engineering career fairs via RFC 5545 iCalendar (`.ics`) feed parsing and authenticated session API scraping.
-- **EngageSC Scraper (`crawl_usc_events.py`)**: Crawls USC’s CampusGroups mobile endpoints for club activities, speaker sessions, and workshops.
-- **USC Calendar API**: Pulls university-wide symposiums, guest lectures, and campus department events.
-- **Free Food Detection Engine**: Employs regex pattern matching across all feeds to flag catered lunches, Sweetgreen buffets, boba socials, and pizza nights.
+- **Native iMessage Interface (`imessage_reader.py`, `imessage_sender.py`)**: Interrogates macOS `chat.db` in read-only URI mode (`file:...mode=ro`) to parse incoming texts in real time without database locks. Replies dispatch via compiled AppleScript (`osascript`) so students interact through their existing Messages app with zero setup.
+- **Agent Core & Proactive Loop (`bot.py`, `llm_client.py`)**: Powered by Meta Muse Ember (`muse-ember-1.0`) in an autonomous tool loop. Tommy can query events, inspect schedules, search clubs, and proactively text students about high-value opportunities before they fill up.
+- **Embedded SQLite Vector DB (`student_memory.py`)**: A zero-dependency SQLite store with a custom in-process C cosine similarity function and deterministic n-gram hashing. Blends vector semantic search with BM25 keyword matching and domain boosts so queries surface top student orgs (**CAIS++**, **LavaLab**, **ACM**, **TroyLabs**) rather than generic campus clubs.
+- **macOS Calendar & Holiday Engine (`calendar_reader.py`)**: Syncs with local `Calendar.app` via AppleScript (no external OAuth needed). It expands recurring course series (`CSCI 402`, `CSCI 591`), normalizes timezones to Los Angeles Pacific Time, suppresses false conflicts during USC breaks (e.g., Thanksgiving), and flags event overlaps with interval math.
+- **Multi-Source Campus Pipelines (`crawl_handshake_events.py`, `pipeline_events.py`)**: Crawls Handshake tech talks (Google, Meta, Citadel) via RFC 5545 `.ics` feeds and APIs, scrapes EngageSC student orgs, and parses the USC Calendar API, automatically tagging free food and career perks.
