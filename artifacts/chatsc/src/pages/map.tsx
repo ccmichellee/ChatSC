@@ -35,7 +35,7 @@ export default function MapPage() {
 
   return (
     <div className="max-w-6xl mx-auto px-4">
-      <PageHead kicker="Map" title="Campus, pinned">Tap a card to fly there. Tap a pin to see what's happening.</PageHead>
+      <PageHead kicker="Map" title="Campus, pinned" />
       <EventFilterBar value={filters} onChange={setFilters} />
       <div className="mt-4 grid lg:grid-cols-[380px_1fr] gap-4">
         <div className="order-2 lg:order-1 lg:h-[640px] overflow-y-auto space-y-3 pr-1" aria-label="Events list">

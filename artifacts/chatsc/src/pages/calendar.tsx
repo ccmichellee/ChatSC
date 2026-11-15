@@ -12,6 +12,7 @@ import { ClassBlockEditor } from "@/components/class-blocks";
 import { EventDialog } from "@/components/events-ui";
 import { ErrorState, PageHead } from "@/components/bits";
 import { TZ, blockOverlaps, conflictsWith, isConflict } from "@/lib/campus";
+import { calendarEvent } from "@/lib/calendar-events";
 
 export default function CalendarPage() {
   const qc = useQueryClient();
@@ -22,6 +23,7 @@ export default function CalendarPage() {
   const [blocks, setBlocks] = useState<ClassBlock[]>([]);
   const [hide, setHide] = useState(false);
   const [open, setOpen] = useState<CampusEvent | null>(null);
+  const [month, setMonth] = useState(false);
   const inited = useRef(false);
   useEffect(() => {
     if (profile.data && !inited.current) { inited.current = true; setBlocks(profile.data.availability ?? []); }
@@ -30,16 +32,21 @@ export default function CalendarPage() {
   const all = events.data ?? [];
   const conflicts = useMemo(() => all.filter((e) => conflictsWith(e, blocks)), [all, blocks]);
   const fcEvents = useMemo(() => {
-    const evs = all.filter((e) => e.start && (!hide || !isConflict(e, blocks))).map((e) => ({
-      id: String(e.id), title: e.title, start: e.start!, end: e.end ?? undefined,
-      color: isConflict(e, blocks) ? "#b33a2a" : ({ Technology: "#465d84", Career: "#27654d", "Arts & culture": "#785187", Community: "#806020", Wellness: "#287375", "Campus life": "#990000" }[e.category] ?? "#990000"), classNames: isConflict(e, blocks) ? ["conflict-ev"] : [],
-    }));
-    const cls = blocks.filter((b) => b.start && b.end).map((b, i) => ({
+    const evs = all.filter((e) => e.start && (!hide || !isConflict(e, blocks))).map((e) => {
+      const palette = ({
+        Technology: ["#edf1fa", "#465d84"], Career: ["#eaf4ef", "#27654d"],
+        "Arts & culture": ["#f2ecf7", "#785187"], Community: ["#faf2dc", "#806020"],
+        Wellness: ["#e8f5f5", "#287375"], "Campus life": ["#faeded", "#990000"],
+      }[e.category] ?? ["#faeded", "#990000"]);
+      return { ...calendarEvent(e, month), backgroundColor: palette[0], borderColor: palette[1],
+        textColor: "#292524", classNames: isConflict(e, blocks) ? ["conflict-ev"] : [] };
+    });
+    const cls = (month ? [] : blocks).filter((b) => b.start && b.end).map((b, i) => ({
       id: `class-${i}`, title: b.title || "Class", daysOfWeek: [(b.day + 1) % 7], startTime: b.start, endTime: b.end,
       classNames: ["class-block"], editable: false,
     }));
     return [...cls, ...evs];
-  }, [all, blocks, hide]);
+  }, [all, blocks, hide, month]);
 
   const dirty = JSON.stringify(blocks) !== JSON.stringify(profile.data?.availability ?? []);
   const invalid = blockOverlaps(blocks).size > 0 || blocks.some((b) => b.end <= b.start);
@@ -58,7 +65,7 @@ export default function CalendarPage() {
 
   return (
     <div className="max-w-6xl mx-auto px-4">
-      <PageHead kicker="Calendar" title="Your week, with room to breathe">Striped blocks are your classes. Red blocks are events. Times shown in Los Angeles time.</PageHead>
+      <PageHead kicker="Calendar" title="Your week, with room to breathe">Striped blocks are your classes. Event borders show categories. Times shown in Los Angeles time.</PageHead>
       <div className="grid lg:grid-cols-[1fr_360px] gap-5">
         <div className="rounded-3xl bg-card border border-card-border p-3 md:p-5">
           <div className="flex flex-wrap items-center gap-3 mb-3">
@@ -72,7 +79,18 @@ export default function CalendarPage() {
             <div className={events.isLoading ? "opacity-50 animate-pulse" : ""}>
               <FullCalendar plugins={[dayGridPlugin, timeGridPlugin, luxonPlugin]} timeZone={TZ} initialView="timeGridWeek" firstDay={1}
                 headerToolbar={{ left: "prev,next today", center: "title", right: "dayGridMonth,timeGridWeek" }}
-                height="auto" slotMinTime="07:00:00" slotMaxTime="23:00:00" nowIndicator events={fcEvents}
+                height="auto" slotMinTime="00:00:00" slotMaxTime="24:00:00" scrollTime="08:00:00" nowIndicator events={fcEvents}
+                datesSet={(info) => setMonth(info.view.type === "dayGridMonth")}
+                views={{ dayGridMonth: { dayMaxEvents: 3, eventDisplay: "block" } }}
+                moreLinkClick="popover" moreLinkContent={(info) => `+${info.num} more`}
+                allDayText="All-day" allDaySlot eventMinHeight={0} eventShortHeight={20}
+                eventContent={(info) => {
+                  const ongoing = info.event.extendedProps.ongoing && (month || info.event.extendedProps.ongoingWindow);
+                  const endDay = info.event.extendedProps.endDay as string | undefined;
+                  const endLabel = endDay ? new Date(`${endDay}T12:00:00`).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "";
+                  const label = `${ongoing ? `Ongoing · ends ${endLabel} · ` : info.timeText ? `${info.timeText} ` : ""}${info.event.title}`;
+                  return <div className="calendar-event-label" title={label}>{label}</div>;
+                }}
                 eventClick={(info) => { const ev = all.find((e) => String(e.id) === info.event.id); if (ev) setOpen(ev); }} />
             </div>
           )}
