@@ -194,12 +194,30 @@ def auto_resolve_instagram_business_account(
 ) -> Optional[str]:
     """
     Attempts to automatically find and return the true Instagram Business Account ID (starts with 1784...)
-    from the provided account_id or from the user's connected Facebook Pages (/me/accounts).
+    from the authenticated entity (/me), provided account_id, or connected Facebook Pages (/me/accounts).
     """
     if not access_token:
         return account_id
 
-    # Check 1: If account_id provided, inspect if it is a Facebook Page linking to an Instagram Business account
+    # Check 1: Query /me (handles Page Access Tokens directly)
+    url = f"{GRAPH_API_BASE}/{GRAPH_API_VERSION}/me?fields=id,name,instagram_business_account{{id,username}}&access_token={access_token}"
+    try:
+        req = urllib.request.Request(url, headers={"Accept": "application/json"})
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            me_data = json.loads(resp.read().decode("utf-8"))
+        ig_biz = me_data.get("instagram_business_account")
+        if ig_biz and ig_biz.get("id"):
+            resolved_id = str(ig_biz["id"])
+            username = ig_biz.get("username", "unknown")
+            logger.info(
+                f"🔗 Auto-detected connected Instagram Business Account from Page '{me_data.get('name')}': "
+                f"{resolved_id} (@{username})"
+            )
+            return resolved_id
+    except Exception:
+        pass
+
+    # Check 2: If account_id provided, inspect if it is a Facebook Page linking to an Instagram Business account
     if account_id:
         url = f"{GRAPH_API_BASE}/{GRAPH_API_VERSION}/{account_id}?fields=id,name,instagram_business_account{{id,username}}&access_token={access_token}"
         try:
@@ -217,7 +235,7 @@ def auto_resolve_instagram_business_account(
         except Exception:
             pass
 
-    # Check 2: Look up user's managed Facebook Pages via /me/accounts
+    # Check 3: Look up user's managed Facebook Pages via /me/accounts (for User Access Tokens)
     url = f"{GRAPH_API_BASE}/{GRAPH_API_VERSION}/me/accounts?fields=id,name,instagram_business_account{{id,username}}&access_token={access_token}"
     try:
         req = urllib.request.Request(url, headers={"Accept": "application/json"})
@@ -263,12 +281,28 @@ def diagnose_instagram_setup(
     print(f"ℹ️ Currently configured INSTAGRAM_ACCOUNT_ID: {account_id or '(none)'}\n")
 
     # 1. Query /me
+    is_page_token = False
     try:
-        url = f"{GRAPH_API_BASE}/{GRAPH_API_VERSION}/me?fields=id,name&access_token={access_token}"
+        url = f"{GRAPH_API_BASE}/{GRAPH_API_VERSION}/me?fields=id,name,instagram_business_account{{id,username}}&access_token={access_token}"
         req = urllib.request.Request(url, headers={"Accept": "application/json"})
         with urllib.request.urlopen(req, timeout=10) as resp:
             me_data = json.loads(resp.read().decode("utf-8"))
-        print(f"👤 Authenticated User: {me_data.get('name')} (ID: {me_data.get('id')})")
+        entity_name = me_data.get('name')
+        entity_id = me_data.get('id')
+        print(f"👤 Authenticated Entity: {entity_name} (ID: {entity_id})")
+
+        ig_biz = me_data.get("instagram_business_account")
+        if ig_biz:
+            ig_id = ig_biz.get("id")
+            ig_user = ig_biz.get("username")
+            print(f"   👉 Connected Instagram Business Account: @{ig_user} (ID: {ig_id})")
+            print(f"   🎯 FIX: Run the following in your terminal:")
+            print(f"      export INSTAGRAM_ACCOUNT_ID=\"{ig_id}\"\n")
+            print("=" * 65 + "\n")
+            return
+        else:
+            print("   ℹ️ This token belongs to Facebook Page / Entity: " + str(entity_name))
+            is_page_token = True
     except urllib.error.HTTPError as e:
         print(f"❌ Failed to query /me (HTTP {e.code}): {e.read().decode('utf-8', errors='ignore')}")
         print("=" * 65 + "\n")
@@ -278,65 +312,74 @@ def diagnose_instagram_setup(
         print("=" * 65 + "\n")
         return
 
-    # 2. Query /me/accounts (Facebook Pages)
-    try:
-        url = f"{GRAPH_API_BASE}/{GRAPH_API_VERSION}/me/accounts?fields=id,name,instagram_business_account{{id,username}}&access_token={access_token}"
-        req = urllib.request.Request(url, headers={"Accept": "application/json"})
-        with urllib.request.urlopen(req, timeout=10) as resp:
-            pages_data = json.loads(resp.read().decode("utf-8"))
-        pages = pages_data.get("data", [])
-        print(f"📄 Facebook Pages found: {len(pages)}")
+    # 2. If it's a User token, query /me/accounts (Facebook Pages)
+    if not is_page_token:
+        try:
+            url = f"{GRAPH_API_BASE}/{GRAPH_API_VERSION}/me/accounts?fields=id,name,instagram_business_account{{id,username}}&access_token={access_token}"
+            req = urllib.request.Request(url, headers={"Accept": "application/json"})
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                pages_data = json.loads(resp.read().decode("utf-8"))
+            pages = pages_data.get("data", [])
+            print(f"📄 Facebook Pages found: {len(pages)}")
 
-        found_ig = False
-        for p in pages:
-            p_name = p.get("name")
-            p_id = p.get("id")
-            ig_biz = p.get("instagram_business_account")
-            if ig_biz:
-                found_ig = True
-                ig_id = ig_biz.get("id")
-                ig_user = ig_biz.get("username")
-                print(f"   • Page: '{p_name}' (ID: {p_id})")
-                print(f"     👉 Linked Instagram Business Account: @{ig_user} (ID: {ig_id})")
-                print(f"     🎯 FIX: Run the following in your terminal:")
-                print(f"        export INSTAGRAM_ACCOUNT_ID=\"{ig_id}\"\n")
-            else:
-                print(f"   • Page: '{p_name}' (ID: {p_id}) -> No Instagram account connected.")
-
-        if not found_ig:
-            print("\n⚠️ No Instagram Business/Creator account is connected to your Facebook Pages.")
-            print("   Why Meta throws: '(#100) Tried accessing nonexisting field (business_discovery)':")
-            print("   In Meta's Graph API, the 'business_discovery' edge is ONLY available on an")
-            print("   Instagram Business Account (node type 'IG User', starting with 1784...).")
-            print("   It cannot be called on a Facebook User ID or Facebook Page ID.\n")
-            print("   Step-by-step resolution:")
-            print("   1. Open the Instagram mobile app on your account.")
-            print("   2. Go to Settings > Account Type and Tools > 'Switch to Professional Account' (Free).")
-            print("   3. Open Facebook on web > Navigate to your Facebook Page.")
-            print("   4. Go to Settings > Linked Accounts > Instagram > Click 'Connect Account'.")
-            print("   5. In Meta Graph API Explorer, generate a new User Access Token with permissions:")
-            print("      'instagram_basic', 'pages_show_list', 'pages_read_engagement'.")
-            print("   6. Re-run 'python3 crawl_instagram_events.py --diagnose' to retrieve your new ID!")
-    except Exception as e:
-        print(f"⚠️ Error querying /me/accounts: {e}")
+            for p in pages:
+                p_name = p.get("name")
+                p_id = p.get("id")
+                ig_biz = p.get("instagram_business_account")
+                if ig_biz:
+                    ig_id = ig_biz.get("id")
+                    ig_user = ig_biz.get("username")
+                    print(f"   • Page: '{p_name}' (ID: {p_id})")
+                    print(f"     👉 Linked Instagram Business Account: @{ig_user} (ID: {ig_id})")
+                    print(f"     🎯 FIX: Run the following in your terminal:")
+                    print(f"        export INSTAGRAM_ACCOUNT_ID=\"{ig_id}\"\n")
+                    print("=" * 65 + "\n")
+                    return
+                else:
+                    print(f"   • Page: '{p_name}' (ID: {p_id}) -> No Instagram account connected.")
+        except Exception:
+            pass
 
     # 3. Check current account_id if set
     if account_id:
         print(f"\n🔎 Testing current INSTAGRAM_ACCOUNT_ID '{account_id}':")
         try:
-            url = f"{GRAPH_API_BASE}/{GRAPH_API_VERSION}/{account_id}?fields=id,name,username&access_token={access_token}"
+            url = f"{GRAPH_API_BASE}/{GRAPH_API_VERSION}/{account_id}?fields=id,name,username,instagram_business_account{{id,username}}&access_token={access_token}"
             req = urllib.request.Request(url, headers={"Accept": "application/json"})
             with urllib.request.urlopen(req, timeout=10) as resp:
                 node_data = json.loads(resp.read().decode("utf-8"))
-            if "username" in node_data:
-                print(f"   ✅ Node is a valid Instagram User node: @{node_data.get('username')}")
+
+            ig_biz = node_data.get("instagram_business_account")
+            if ig_biz:
+                ig_id = ig_biz.get("id")
+                ig_user = ig_biz.get("username")
+                print(f"   👉 Node '{node_data.get('name')}' has linked Instagram Account: @{ig_user} (ID: {ig_id})")
+                print(f"   🎯 FIX: Run the following in your terminal:")
+                print(f"      export INSTAGRAM_ACCOUNT_ID=\"{ig_id}\"\n")
+                print("=" * 65 + "\n")
+                return
+            elif "username" in node_data:
+                print(f"   ✅ Node is already a valid Instagram User node: @{node_data.get('username')}")
             else:
-                print(f"   ⚠️ Node is a Facebook Page/Object ('{node_data.get('name')}'), not an Instagram node.")
+                print(f"   ⚠️ Node '{node_data.get('name')}' (ID: {account_id}) is a Facebook Page, but has no Instagram account linked.")
         except urllib.error.HTTPError as e:
             print(f"   ❌ Node query failed (HTTP {e.code}): {e.read().decode('utf-8', errors='ignore')}")
         except Exception as e:
             print(f"   ❌ Node query error: {e}")
 
+    # Instructions for linking
+    print("\n⚠️ Why this causes error #100:")
+    print("   Meta's 'business_discovery' API can ONLY be queried from an Instagram Professional Account node (starts with 1784...).")
+    print(f"   Your Facebook Page '{entity_name}' does not have an Instagram Business account connected yet.\n")
+    print("   📋 How to link your Instagram account to your Facebook Page:")
+    print("   1. In your mobile Instagram app:")
+    print("      • Go to Settings > 'Account type and tools' > 'Switch to professional account' (Creator or Business - free).")
+    print("   2. In your Facebook Page:")
+    print("      • Go to Facebook > your Page 'Chatsc' > Settings > 'Linked Accounts' > 'Instagram'.")
+    print("      • Click 'Connect Account' and log into your professional Instagram account.")
+    print("   3. Once connected, re-run:")
+    print("      python3 crawl_instagram_events.py --diagnose")
+    print("      (It will immediately print your new Instagram ID to export!)")
     print("=" * 65 + "\n")
 
 
