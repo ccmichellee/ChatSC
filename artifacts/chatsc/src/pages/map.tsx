@@ -102,7 +102,7 @@ export default function MapPage() {
                 {activeFilterCount > 0 && <span className="grid h-5 min-w-5 place-items-center rounded-full bg-primary px-1 text-[10px] text-primary-foreground">{activeFilterCount}</span>}
               </button>
             </PopoverTrigger>
-            <PopoverContent align="end" sideOffset={8} className="w-[min(24rem,calc(100vw-2rem))] rounded-2xl border-border bg-card p-4 shadow-xl">
+            <PopoverContent align="end" sideOffset={8} className="z-[1200] w-[min(24rem,calc(100vw-2rem))] rounded-2xl border-border bg-card p-4 shadow-xl">
               <div className="flex items-center justify-between gap-3">
                 <h2 className="font-display text-lg font-bold">Filter events</h2>
                 {hasFilters && <button type="button" onClick={clearFilters} data-testid="button-clear-filters" className="rounded-full px-2 py-1 text-xs font-semibold text-primary hover:bg-secondary">Clear all</button>}
@@ -244,7 +244,7 @@ export default function MapPage() {
           </div>
         </aside>
 
-        <div className="relative order-1 h-[390px] min-w-0 overflow-hidden rounded-3xl border-4 border-card shadow-lg sm:h-[450px] lg:order-2 lg:h-full" data-testid="map">
+        <div className="relative z-0 order-1 h-[390px] min-w-0 overflow-hidden rounded-3xl border-4 border-card shadow-lg sm:h-[450px] lg:order-2 lg:h-full" data-testid="map">
           <MapContainer center={CENTER} zoom={16} scrollWheelZoom keyboard className="h-full w-full">
             <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
             {placed.map((event) => (

@@ -13,6 +13,7 @@ import CalendarPage from '@/pages/calendar';
 import Clubs from '@/pages/clubs';
 import Opportunities from '@/pages/opportunities';
 import Onboarding from '@/pages/onboarding';
+import MessageDemo from '@/pages/message-demo';
 import { PrivacyPage, TermsPage } from '@/pages/legal';
 
 const queryClient = new QueryClient({ defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } } });
@@ -29,6 +30,7 @@ function Router() {
           <Route path="/clubs" component={Clubs} />
           <Route path="/opportunities" component={Opportunities} />
           <Route path="/onboarding" component={Onboarding} />
+          <Route path="/demo" component={MessageDemo} />
           <Route path="/privacy" component={PrivacyPage} />
           <Route path="/terms" component={TermsPage} />
           <Route component={NotFound} />

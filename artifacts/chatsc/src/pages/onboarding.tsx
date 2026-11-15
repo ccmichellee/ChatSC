@@ -146,7 +146,7 @@ export default function Onboarding() {
         qc.invalidateQueries({ queryKey: ["/api/recommendations"] });
         qc.invalidateQueries({ queryKey: ["/api/events"] });
         toast({ title: "Preferences saved", description: "You can update them anytime." });
-        nav("/");
+        nav(profile.data?.onboarded ? "/" : "/demo");
       },
       onError: () => toast({ title: "Couldn't save your onboarding", description: "Please check the fields and try again.", variant: "destructive" }),
     });

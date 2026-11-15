@@ -20,3 +20,14 @@ distinct content types; link resource summaries to official USC sources. Never
 imply messages are being sent until delivery is connected. Do not treat a typed
 phone number as verification or permission to reveal a profile; preserve
 explicit messaging consent before enabling texts.
+
+Students sign up on the website to receive personalized text recommendations;
+they do not initiate signup by texting a keyword or short code. The preview may
+show an on-screen message demo, but it does not send real SMS.
+
+**Why:** The user chose website signup and text recommendations as the product
+message, while specifying that this change is wording only, not SMS activation.
+
+**How to apply:** Do not reintroduce short-code placeholders or instructions to
+text first. Keep on-screen demos distinct from real messages until delivery is
+connected and the student has explicitly opted in.

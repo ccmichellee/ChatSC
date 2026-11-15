@@ -74,8 +74,7 @@ export default function Home() {
             <div className="mt-7 flex max-w-lg items-start gap-3 border-l-2 border-accent pl-4 text-sm leading-6 text-muted-foreground">
               <Sparkles size={16} className="mt-1 shrink-0 text-primary" />
               <p>
-                Text TROJAN to <span className="font-semibold text-foreground">[short code coming soon]</span> to start.
-                <span className="mt-1 block">The number and text signup aren’t active in this preview. Use Start Onboarding to share your preferences.</span>
+                Sign up on the website to receive personalized campus recommendations by text.
               </p>
             </div>
           </div>
@@ -127,10 +126,10 @@ export default function Home() {
           <div className="relative overflow-hidden bg-foreground p-7 text-background sm:p-9">
             <div className="home-rule absolute left-0 right-0 top-0 h-1" aria-hidden />
             <p className="font-mono text-[10px] uppercase tracking-[.2em] text-accent">A useful kind of AI</p>
-            <h2 className="mt-4 max-w-sm font-display text-3xl font-extrabold leading-tight sm:text-4xl">A focused shortlist, delivered by text.</h2>
-            <p className="mt-4 max-w-sm text-sm leading-6 text-background/75">The AI agent matches campus opportunities to your interests, goals, availability, and chosen cadence, then gives you a clear next step. Text delivery is not connected in this preview.</p>
-            <Link href="/onboarding" className="mt-7 inline-flex items-center gap-2 rounded-full bg-accent px-5 py-3 text-sm font-bold text-accent-foreground transition-transform hover:-translate-y-0.5">
-              Set up my profile <ArrowRight size={16} />
+            <h2 className="mt-4 max-w-sm font-display text-3xl font-extrabold leading-tight sm:text-4xl">Personalized recommendations, by text.</h2>
+            <p className="mt-4 max-w-sm text-sm leading-6 text-background/75">Sign up on the website and share what matters to you. ChatSC turns campus listings into relevant opportunities matched to your interests, goals, and schedule.</p>
+            <Link href={profile?.onboarded ? "/demo" : "/onboarding"} className="mt-7 inline-flex items-center gap-2 rounded-full bg-accent px-5 py-3 text-sm font-bold text-accent-foreground transition-transform hover:-translate-y-0.5">
+              {profile?.onboarded ? "Preview a sample text" : "Start Onboarding"} <ArrowRight size={16} />
             </Link>
             <div className="absolute -bottom-14 -right-10 h-44 w-44 rounded-full border border-background/15" aria-hidden />
             <div className="absolute -bottom-7 -right-3 h-28 w-28 rounded-full border border-background/15" aria-hidden />
