@@ -16,6 +16,9 @@ from fastapi import FastAPI, HTTPException, Query, Request, Response
 from pydantic import BaseModel, Field, field_validator
 from web.api.store import PACIFIC, WebStore, conflicts
 from web.api.refresh import refresh, seed_fallback
+from web.api.toji import build_router
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
 
 logging.basicConfig(level=logging.INFO)
 store = WebStore()
@@ -30,6 +33,19 @@ async def lifespan(app):
 
 
 app = FastAPI(title="ChatSC API", lifespan=lifespan)
+app.include_router(build_router(store))
+
+
+@app.exception_handler(RequestValidationError)
+async def private_validation_error(request: Request, exc: RequestValidationError):
+    if request.url.path in ("/api/signups", "/api/chat"):
+        return JSONResponse(status_code=422, content={
+            "detail": "Please check the required fields, US phone number, and message length."
+        }, headers={"Cache-Control": "no-store"})
+    # Strip input values from validation errors throughout the API.
+    return JSONResponse(status_code=422, content={"detail": [
+        {"loc": e["loc"], "msg": e["msg"], "type": e["type"]} for e in exc.errors()
+    ]})
 
 
 class ClassBlock(BaseModel):

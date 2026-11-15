@@ -5,6 +5,49 @@ info:
 servers:
   - url: /api
 paths:
+  /signups:
+    post:
+      operationId: createSignup
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SignupInput" }
+      responses:
+        "201":
+          description: Signup stored privately; no personal data returned
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SignupReceipt" }
+    get:
+      operationId: getSignups
+      security: [{ SignupKey: [] }]
+      parameters:
+        - { name: after_id, in: query, schema: { type: integer, minimum: 0, default: 0 } }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 100 } }
+      responses:
+        "200":
+          description: Private bot feed, never requested by the website
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SignupFeed" }
+        "401": { description: Invalid API key }
+        "503": { description: API key not configured }
+  /chat:
+    post:
+      operationId: sendChat
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ChatInput" }
+      responses:
+        "200":
+          description: Toji reply
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ChatReply" }
+        "502": { description: Configured agent unavailable }
   /healthz:
     get:
       operationId: healthCheck
@@ -103,7 +146,57 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/CampusSummary" }
 components:
+  securitySchemes:
+    SignupKey: { type: apiKey, in: header, name: X-API-Key }
   schemas:
+    SignupInput:
+      type: object
+      required: [first_name, phone, consent]
+      properties:
+        first_name: { type: string, minLength: 1, maxLength: 80 }
+        phone: { type: string, maxLength: 30 }
+        interests: { type: array, maxItems: 30, items: { type: string, maxLength: 100 } }
+        classes: { type: string, maxLength: 2000 }
+        consent: { type: boolean }
+    SignupReceipt:
+      type: object
+      required: [message]
+      properties:
+        message: { type: string }
+    SignupRecord:
+      type: object
+      required: [id, profile_id, first_name, phone, interests, classes, consent, consent_text, consent_version, created_at]
+      properties:
+        id: { type: integer }
+        profile_id: { type: string }
+        first_name: { type: string }
+        phone: { type: string }
+        interests: { type: array, items: { type: string } }
+        classes: { type: string }
+        consent: { type: boolean }
+        consent_text: { type: string }
+        consent_version: { type: string }
+        created_at: { type: string }
+    SignupFeed:
+      type: object
+      required: [signups, next_after_id]
+      properties:
+        signups: { type: array, items: { $ref: "#/components/schemas/SignupRecord" } }
+        next_after_id: { type: integer }
+    ChatInput:
+      type: object
+      required: [message]
+      properties:
+        message: { type: string, minLength: 1, maxLength: 2000 }
+        session_id: { type: string, maxLength: 128 }
+        phone: { type: string, maxLength: 30, description: Must match this browser's signup; never used as authentication }
+    ChatReply:
+      type: object
+      required: [reply, session_id, placeholder]
+      properties:
+        reply: { type: string }
+        session_id: { type: string }
+        placeholder: { type: boolean }
     HealthStatus:
       type: object
       required: [status]

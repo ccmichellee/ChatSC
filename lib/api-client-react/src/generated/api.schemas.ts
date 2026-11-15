@@ -4,6 +4,67 @@
  * Api
  * OpenAPI spec version: 1.0.0
  */
+export interface SignupInput {
+  /**
+     * @minLength 1
+     * @maxLength 80
+     */
+  first_name: string;
+  /** @maxLength 30 */
+  phone: string;
+  /**
+     * @maxItems 30
+     * @items.maxLength 100
+     */
+  interests?: string[];
+  /** @maxLength 2000 */
+  classes?: string;
+  consent: boolean;
+}
+
+export interface SignupReceipt {
+  message: string;
+}
+
+export interface SignupRecord {
+  id: number;
+  profile_id: string;
+  first_name: string;
+  phone: string;
+  interests: string[];
+  classes: string;
+  consent: boolean;
+  consent_text: string;
+  consent_version: string;
+  created_at: string;
+}
+
+export interface SignupFeed {
+  signups: SignupRecord[];
+  next_after_id: number;
+}
+
+export interface ChatInput {
+  /**
+     * @minLength 1
+     * @maxLength 2000
+     */
+  message: string;
+  /** @maxLength 128 */
+  session_id?: string;
+  /**
+     * Must match this browser's signup; never used as authentication
+     * @maxLength 30
+     */
+  phone?: string;
+}
+
+export interface ChatReply {
+  reply: string;
+  session_id: string;
+  placeholder: boolean;
+}
+
 export interface HealthStatus {
   status: string;
 }
@@ -117,6 +178,18 @@ export interface CampusSummary {
   last_updated: string | null;
   sample_data: boolean;
 }
+
+export type GetSignupsParams = {
+/**
+ * @minimum 0
+ */
+after_id?: number;
+/**
+ * @minimum 1
+ * @maximum 100
+ */
+limit?: number;
+};
 
 export type GetEventsParams = {
 q?: string;

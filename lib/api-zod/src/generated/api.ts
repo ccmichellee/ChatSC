@@ -7,6 +7,82 @@
 import * as zod from 'zod';
 
 
+export const createSignupBodyFirstNameMax = 80;
+
+export const createSignupBodyPhoneMax = 30;
+
+export const createSignupBodyInterestsItemMax = 100;
+
+export const createSignupBodyInterestsMax = 30;
+
+export const createSignupBodyClassesMax = 2000;
+
+
+
+export const CreateSignupBody = zod.object({
+  "first_name": zod.string().min(1).max(createSignupBodyFirstNameMax),
+  "phone": zod.string().max(createSignupBodyPhoneMax),
+  "interests": zod.array(zod.string().max(createSignupBodyInterestsItemMax)).max(createSignupBodyInterestsMax).optional(),
+  "classes": zod.string().max(createSignupBodyClassesMax).optional(),
+  "consent": zod.boolean()
+})
+
+export const CreateSignupResponse = zod.object({
+  "message": zod.string()
+})
+
+
+export const getSignupsQueryAfterIdDefault = 0;
+export const getSignupsQueryAfterIdMin = 0;
+
+export const getSignupsQueryLimitDefault = 100;
+export const getSignupsQueryLimitMax = 100;
+
+
+
+export const GetSignupsQueryParams = zod.object({
+  "after_id": zod.coerce.number().int().min(getSignupsQueryAfterIdMin).default(getSignupsQueryAfterIdDefault),
+  "limit": zod.coerce.number().int().min(1).max(getSignupsQueryLimitMax).default(getSignupsQueryLimitDefault)
+})
+
+export const GetSignupsResponse = zod.object({
+  "signups": zod.array(zod.object({
+  "id": zod.number().int(),
+  "profile_id": zod.string(),
+  "first_name": zod.string(),
+  "phone": zod.string(),
+  "interests": zod.array(zod.string()),
+  "classes": zod.string(),
+  "consent": zod.boolean(),
+  "consent_text": zod.string(),
+  "consent_version": zod.string(),
+  "created_at": zod.string()
+})),
+  "next_after_id": zod.number().int()
+})
+
+
+export const sendChatBodyMessageMax = 2000;
+
+export const sendChatBodySessionIdMax = 128;
+
+export const sendChatBodyPhoneMax = 30;
+
+
+
+export const SendChatBody = zod.object({
+  "message": zod.string().min(1).max(sendChatBodyMessageMax),
+  "session_id": zod.string().max(sendChatBodySessionIdMax).optional(),
+  "phone": zod.string().max(sendChatBodyPhoneMax).optional().describe('Must match this browser\'s signup; never used as authentication')
+})
+
+export const SendChatResponse = zod.object({
+  "reply": zod.string(),
+  "session_id": zod.string(),
+  "placeholder": zod.boolean()
+})
+
+
 export const HealthCheckResponse = zod.object({
   "status": zod.string()
 })

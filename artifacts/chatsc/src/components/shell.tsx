@@ -36,9 +36,10 @@ export function Shell({ children }: { children: ReactNode }) {
         </nav>
       </header>
       <main id="main" className="flex-1">{children}</main>
-      <footer className="border-t border-border mt-16">
+      <footer className="border-t border-border mt-16 pb-20 md:pb-0">
         <div className="max-w-6xl mx-auto px-4 py-8 text-sm text-muted-foreground flex flex-col md:flex-row gap-2 justify-between">
           <p><span className="font-display font-bold text-foreground">ChatSC</span> is an independent student guide, not an official USC service.</p>
+          <p className="flex gap-4"><Link href="/privacy" className="underline" data-testid="link-privacy">Privacy (draft)</Link><Link href="/terms" className="underline" data-testid="link-terms">Terms (draft)</Link></p>
           <p className="font-mono text-xs">All times shown in Los Angeles time. Items marked Sample are fictional.</p>
         </div>
       </footer>

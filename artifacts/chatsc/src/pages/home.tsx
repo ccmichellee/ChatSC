@@ -8,6 +8,7 @@ import { EventCard, EventDialog } from "@/components/events-ui";
 import { CardSkeleton, EmptyState, ErrorState } from "@/components/bits";
 import { isConflict, timeAgo } from "@/lib/campus";
 import { upcomingEvents } from "@/lib/upcoming-events";
+import { TojiSection } from "@/components/toji";
 
 export default function Home() {
   const qc = useQueryClient();
@@ -69,6 +70,8 @@ export default function Home() {
           </p>
         </div>
       </section>
+
+      <TojiSection />
 
       <section aria-label="Campus at a glance" className="max-w-6xl mx-auto px-4 mt-14 grid grid-cols-2 md:grid-cols-4 gap-3">
         {[["Events", s?.events, "/events"], ["Clubs", s?.clubs, "/clubs"], ["Opportunities", s?.opportunities, "/opportunities"], ["With free food", s?.free_food, "/events"]].map(([label, n, href]) => (

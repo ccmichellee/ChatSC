@@ -26,13 +26,19 @@ import type {
 import type {
   CampusEvent,
   CampusSummary,
+  ChatInput,
+  ChatReply,
   Club,
   GetClubsParams,
   GetEventsParams,
   GetRecommendationsParams,
+  GetSignupsParams,
   HealthStatus,
   Opportunity,
   RefreshStatus,
+  SignupFeed,
+  SignupInput,
+  SignupReceipt,
   StudentInput,
   StudentProfile
 } from './api.schemas';
@@ -63,6 +69,272 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
   }
   return result;
 };
+
+export const getCreateSignupUrl = () => {
+
+
+
+
+  return `/api/signups`
+}
+
+export const createSignup = async (signupInput: SignupInput, options?: Parameters<typeof customFetch>[1]): Promise<SignupReceipt> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<SignupReceipt>(getCreateSignupUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(signupInput)
+  }
+);}
+
+
+
+
+
+export const getCreateSignupMutationKey = () => ['createSignup'] as const;
+
+export const getCreateSignupMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createSignup>>, TError,CreateSignupMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createSignup>>, TError,CreateSignupMutationVariables, TContext> => {
+
+const mutationKey = getCreateSignupMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createSignup>>, CreateSignupMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  createSignup(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateSignupMutationResult = NonNullable<Awaited<ReturnType<typeof createSignup>>>
+    export type CreateSignupMutationBody = BodyType<SignupInput>
+    export type CreateSignupMutationError = ErrorType<unknown>
+    export type CreateSignupMutationVariables = {data: BodyType<SignupInput>}
+
+    export const useCreateSignup = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createSignup>>, TError,CreateSignupMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createSignup>>,
+        TError,
+        CreateSignupMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCreateSignupMutationOptions(options), queryClient);
+    }
+
+export const getGetSignupsUrl = (params?: GetSignupsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/signups?${stringifiedParams}` : `/api/signups`
+}
+
+export const getSignups = async (params?: GetSignupsParams, options?: Parameters<typeof customFetch>[1]): Promise<SignupFeed> => {
+
+  return customFetch<SignupFeed>(getGetSignupsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetSignupsQueryKey = (params?: GetSignupsParams,) => {
+    return [
+    `/api/signups`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetSignupsQueryOptions = <TData = Awaited<ReturnType<typeof getSignups>>, TError = ErrorType<void>>(params?: GetSignupsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSignups>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetSignupsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSignups>>> = ({ signal }) => getSignups(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSignups>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetSignupsQueryResult = NonNullable<Awaited<ReturnType<typeof getSignups>>>
+export type GetSignupsQueryError = ErrorType<void>
+
+
+export function useGetSignups<TData = Awaited<ReturnType<typeof getSignups>>, TError = ErrorType<void>>(
+ params: undefined |  GetSignupsParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSignups>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getSignups>>,
+          TError,
+          Awaited<ReturnType<typeof getSignups>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetSignups<TData = Awaited<ReturnType<typeof getSignups>>, TError = ErrorType<void>>(
+ params?: GetSignupsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSignups>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getSignups>>,
+          TError,
+          Awaited<ReturnType<typeof getSignups>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetSignups<TData = Awaited<ReturnType<typeof getSignups>>, TError = ErrorType<void>>(
+ params?: GetSignupsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSignups>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetSignups<TData = Awaited<ReturnType<typeof getSignups>>, TError = ErrorType<void>>(
+ params?: GetSignupsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSignups>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetSignupsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getSendChatUrl = () => {
+
+
+
+
+  return `/api/chat`
+}
+
+export const sendChat = async (chatInput: ChatInput, options?: Parameters<typeof customFetch>[1]): Promise<ChatReply> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<ChatReply>(getSendChatUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(chatInput)
+  }
+);}
+
+
+
+
+
+export const getSendChatMutationKey = () => ['sendChat'] as const;
+
+export const getSendChatMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof sendChat>>, TError,SendChatMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof sendChat>>, TError,SendChatMutationVariables, TContext> => {
+
+const mutationKey = getSendChatMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof sendChat>>, SendChatMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  sendChat(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SendChatMutationResult = NonNullable<Awaited<ReturnType<typeof sendChat>>>
+    export type SendChatMutationBody = BodyType<ChatInput>
+    export type SendChatMutationError = ErrorType<void>
+    export type SendChatMutationVariables = {data: BodyType<ChatInput>}
+
+    export const useSendChat = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof sendChat>>, TError,SendChatMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof sendChat>>,
+        TError,
+        SendChatMutationVariables,
+        TContext
+      > => {
+      return useMutation(getSendChatMutationOptions(options), queryClient);
+    }
 
 export const getHealthCheckUrl = () => {
 

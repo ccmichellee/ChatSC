@@ -13,6 +13,8 @@ import CalendarPage from '@/pages/calendar';
 import Clubs from '@/pages/clubs';
 import Opportunities from '@/pages/opportunities';
 import Onboarding from '@/pages/onboarding';
+import { PrivacyPage, TermsPage } from '@/pages/legal';
+import { TojiProvider } from '@/components/toji';
 
 const queryClient = new QueryClient({ defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } } });
 
@@ -28,6 +30,8 @@ function Router() {
           <Route path="/clubs" component={Clubs} />
           <Route path="/opportunities" component={Opportunities} />
           <Route path="/onboarding" component={Onboarding} />
+          <Route path="/privacy" component={PrivacyPage} />
+          <Route path="/terms" component={TermsPage} />
           <Route component={NotFound} />
         </Switch>
       </RoutedErrorBoundary>
@@ -45,7 +49,9 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
-          <Router />
+          <TojiProvider>
+            <Router />
+          </TojiProvider>
         </WouterRouter>
         <Toaster />
       </TooltipProvider>
